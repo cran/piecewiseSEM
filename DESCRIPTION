@@ -1,0 +1,16 @@
+Package: piecewiseSEM
+Type: Package
+Title: Piecewise Structural Equation Modeling
+Version: 1.0.0
+Date: 2015-10-26
+Author: Jon Lefcheck
+Maintainer: Jon Lefcheck <jslefche@vims.edu>
+Description: Implements piecewise structural equation models.
+License: GPL-3
+Imports: ggm, lavaan, lmerTest, nlme, lme4, methods
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr
+NeedsCompilation: no
+Packaged: 2015-10-27 17:48:10 UTC; jslef
+Repository: CRAN
+Date/Publication: 2015-10-28 00:29:00
