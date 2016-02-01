@@ -4,10 +4,9 @@
   
   A formal description of this package can be found at:
   
-    Lefcheck, J.S. "piecewiseSEM: Piecewise structural equation modeling in R for ecology, evolution, and systematics." 
-    arXiv:1509.01845. http://arxiv.org/abs/1509.01845
+    Lefcheck, Jonathan S. (2015) "piecewiseSEM: Piecewise structural equation modeling in R for ecology, evolution, and systematics." Methods in Ecology and Evolution. In press. DOI: 10.1111/2041-210X.12512
 
-Version: 1.0.0 (2015-10-26)
+Version: 1.0.3 (2016-01-20)
 
 Author: Jon Lefcheck <jslefche@vims.edu>
 
@@ -18,8 +17,13 @@ Supported model classes include: `lm`, `glm`, `glm.nb`, `gls`, `pgls`, `lme`, `g
 ###Load package
 
 ```
+# Install latest version from CRAN
+install.packages("piecewiseSEM")
+
+# Install dev version from GitHub
 # library(devtools)
 # install_github("jslefche/piecewiseSEM")
+
 library(piecewiseSEM)
 ```
 
@@ -34,7 +38,7 @@ The data is alternately hosted in Ecological Archives E090-028-S1 (DOI: 10.1890/
 
 The model corresponds to the following hypothesis (Fig. 2, Shipley 2009);
 
-![Shipley 2009 Fig. 2](http://www.esajournals.org/na101/home/literatum/publisher/esa/journals/content/ecol/2009/00129658-90.2/08-1034.1/production/images/large/i0012-9658-90-2-363-f02.jpeg)
+![Shipley 2009 Fig. 2](https://raw.githubusercontent.com/jslefche/jslefche.github.io/master/img/shipley_2009.jpg)
 
 Models are constructed using a mix of the `nlme` and `lmerTest` packages, as in the supplements of Shipley 2009. 
 
