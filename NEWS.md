@@ -1,6 +1,25 @@
 # piecewiseSEM Change Log
 
+### 2016-03-10 Version 1.1.0
+  * Feature addition: rudimentary plotting using `sem.plot`
+  * Feature addition: support for `glmmadmb` models
+  * Feature addition: `pbkrtest` to reliably extract p-values from `lme4` models
+  * *Major Bug Fix:* incorrect basis set specified by `ggm::topSort`; introduced `sort.dag` function, removed dependency on `ggm`
+  * *Major Bug Fix:* `sem.basis.set` now treats transformed variables as untransformed, resolving duplicate vars in the basis set
+  * Bug fix: resolved switched interactions (e.g., x1:x2 vs x2:x1) leading to duplicate vars in the basis set using `get.dag`
+  * Bug fix: fixed long standing bug with `lmer` models not returning p-values
+  
+### 2016-02-09 Version 1.0.4
+  * Bug fix: correlated errors among exogenous variables in `sem.coefs`
+  * Bug fix: correctly scale data from `pgls` models using `get.scaled.data`
+  * Bug fix: corrected basis set for models created with `gls`
+  * Feature addition: helper function `get.scaled.model` to get model from scaled coefficients
+  * Feature addition: (partial) correlations in sem.coefs
+  * Bug fix: passing of correlated errors to lavaan
+  * Bug fix: standardized coefficients for variables transformed in model formula
+
 ### 2016-01-20 Version 1.0.3
+  * Bug fix: get.model.control updated for latest versions of lme4 and nlme
   * Bug fix: hand compute interactions in `sem.lavaan` using argument `compute.int = TRUE`
   * Feature addition: function `get.scaled.data` to handle transformed variables in `sem.coefs` when standardize = "scale"
 

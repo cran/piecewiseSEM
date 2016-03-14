@@ -71,7 +71,7 @@ Models fit with \code{lm} should return identical coefficients to those generate
 data(shipley2009)
 
 # Load model packages
-library(lmerTest)
+library(lme4)
 library(nlme)
 
 # Create list of models 
@@ -96,27 +96,25 @@ shipley2009.modlist = list(
 
 lavaan::summary(lavaan.model)
 
-### 
+### NOT RUN ###
 
-# Load model packages
-library(lmerTest)
-library(nlme)
+# # Load data from Shipley (2013)
+# data(shipley2013) 
+# 
+# shipley2013.modlist = list(
+#   
+#   lme(x2~x1, random = ~x1 | species, data = shipley2013),
+#   
+#   lme(x3~x2, random = ~x2 | species, data = shipley2013),
+#   
+#   lme(x4~x2, random = ~x2 | species, data = shipley2013),
+#   
+#   lme(x5~x3+x4, random = ~x3+x4 | species, data = shipley2013)
+#   
+# )
+# 
+# # Get variance-covariance based SEM
+# lavaan::summary(sem.lavaan(shipley2013.modlist, shipley2013))
 
-# Load data from Shipley (2013)
-data(shipley2013) 
-
-shipley2013.modlist = list(
-
-  lme(x2~x1, random = ~x1 | species, data = shipley2013),
-  
-  lme(x3~x2, random = ~x2 | species, data = shipley2013),
-  
-  lme(x4~x2, random = ~x2 | species, data = shipley2013),
-  
-  lme(x5~x3+x4, random = ~x3+x4 | species, data = shipley2013)
-  
-  )
-  
-# Get variance-covariance based SEM
-lavaan::summary(sem.lavaan(shipley2013.modlist, shipley2013))
+### END NOT RUN ###
 }

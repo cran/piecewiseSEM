@@ -1,15 +1,10 @@
 sem.fit = function(
   
-  modelList, data, corr.errors = NULL, add.vars = NULL, grouping.vars = NULL, top.level.vars = NULL, 
-  adjust.p = FALSE, basis.set = NULL, pvalues.df = NULL, model.control = NULL, .progressBar = TRUE
+  modelList, data, conditional = FALSE, corr.errors = NULL, add.vars = NULL, grouping.vars = NULL, 
+  adjust.p = FALSE, basis.set = NULL, pvalues.df = NULL, model.control = NULL, 
+  .progressBar = TRUE
   
   ) {
-
-  if(!all(sapply(modelList, function(i) 
-    
-    all(class(i) %in% c("lm", "glm", "negbin", "gls", "pgls", "lme", "lmerMod", "merModLmerTest", "glmerMod", "glmmPQL")) 
-    
-    ) ) ) stop("Model classes in model list are not supported")
   
   if(is.null(data)) stop("Must supply dataset")
   
@@ -18,21 +13,18 @@ sem.fit = function(
   # Get basis set
   if(is.null(basis.set)) basis.set = sem.basis.set(modelList, corr.errors, add.vars)
   
-  # Filter exogenous variables
-  basis.set = filter.exogenous(modelList, basis.set, corr.errors, add.vars)
-  
   # Conduct d-sep tests
   if(is.null(pvalues.df)) pvalues.df = sem.missing.paths(
     
-    modelList, data, conditional = FALSE, corr.errors, add.vars, grouping.vars,
-    top.level.vars, adjust.p, basis.set, model.control, .progressBar
+    modelList, data, conditional, corr.errors, add.vars, grouping.vars,
+    adjust.p, basis.set, model.control, .progressBar
     
   )
   
   # Derive Fisher's C statistic and compare to Chi-squared distribution
   fisher.c = sem.fisher.c(
     
-    modelList, data, corr.errors, add.vars, grouping.vars, top.level.vars, 
+    modelList, data, corr.errors, add.vars, grouping.vars, 
     adjust.p, basis.set, pvalues.df, model.control, .progressBar
     
   )
@@ -40,7 +32,7 @@ sem.fit = function(
   # Use Fisher's C to derive AIC values
   AIC.c = sem.aic(
     
-    modelList, data, corr.errors, add.vars, grouping.vars, top.level.vars, 
+    modelList, data, corr.errors, add.vars, grouping.vars,
     adjust.p, basis.set, pvalues.df, model.control, .progressBar
     
   )

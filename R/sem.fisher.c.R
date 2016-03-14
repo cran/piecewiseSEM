@@ -1,18 +1,16 @@
 sem.fisher.c = function(
   
-  modelList, data, corr.errors = NULL, add.vars = NULL, grouping.vars = NULL, top.level.vars = NULL, 
-  adjust.p = FALSE, basis.set = NULL, pvalues.df = NULL, model.control = NULL, .progressBar = TRUE
+  modelList, data, corr.errors = NULL, add.vars = NULL, grouping.vars = NULL, adjust.p = FALSE, 
+  basis.set = NULL, pvalues.df = NULL, model.control = NULL, .progressBar = TRUE
   
   ) {
   
   if(is.null(basis.set)) basis.set = suppressWarnings(sem.basis.set(modelList, corr.errors, add.vars))
-    
-  basis.set = filter.exogenous(modelList, basis.set, corr.errors, add.vars) 
 
   if(is.null(pvalues.df)) pvalues.df = suppressWarnings(sem.missing.paths(
     
     modelList, data, conditional = FALSE, corr.errors, add.vars, grouping.vars, 
-    top.level.vars, adjust.p, basis.set, model.control, .progressBar
+    adjust.p, basis.set, model.control, .progressBar
     
     ) )
   
@@ -25,6 +23,6 @@ sem.fisher.c = function(
   p.value = 1 - pchisq(fisher.C, 2 * length(basis.set)) 
   
   # Return output in a data.frame
-  data.frame(fisher.c = round(fisher.C, 2), k = round(2 * length(basis.set), 1), p.value = round(p.value, 3))
+  data.frame(fisher.c = round(fisher.C, 2), df = round(2 * length(basis.set), 1), p.value = round(p.value, 3))
   
 }

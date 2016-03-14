@@ -8,7 +8,7 @@ data(shipley2009)
 
 ## ---- message = FALSE, results = "hide"----------------------------------
 # Load required libraries for linear mixed effects models
-library(lmerTest)
+library(lme4)
 library(nlme)
 
 # Load example data from package
@@ -46,6 +46,9 @@ prod(coef.table$estimate)
 ## ------------------------------------------------------------------------
 sem.coefs(shipley2009.modlist, shipley2009, standardize = "scale")
 
+## ------------------------------------------------------------------------
+sem.plot(shipley2009.modlist, shipley2009, standardize = "scale")
+
 ## ---- fig.width = 4, fig.height = 4--------------------------------------
 # Create new data for predictions
 shipley2009.new = data.frame(
@@ -59,7 +62,7 @@ shipley2009.new.pred = sem.predict(shipley2009.modlist, shipley2009.new)
 head(shipley2009.new.pred)
 
 # Plot predicted fit
-with(shipley2009, plot(Date ~ DD, col = "grey60"))
+with(shipley2009, plot(Date ~ DD))
 lines(shipley2009.new.pred$Date.fit ~ shipley2009.new.pred$DD, lwd = 2, col = "red")
 
 # Generate predictions with standard errors (based on fixed effects only)

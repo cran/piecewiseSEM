@@ -21,10 +21,10 @@ Supported model classes include: \code{lm}, \code{glm}, \code{glm.nb}, \code{gls
 \tabular{ll}{
 Package: \tab piecewiseSEM\cr
 Type: \tab Package\cr
-Version: \tab 1.0.3\cr
-Date: \tab 2016-01-20\cr
-Depends: \tab R (3.2.X), ggm, lavaan\cr
-Suggests: \tab MASS, lmerTest, nlme\cr
+Version: \tab 1.1\cr
+Date: \tab 2016-03-11\cr
+Depends: \tab R (3.2.3), ggm, lavaan, nlme, pbkrtest\cr
+Suggests: \tab MASS, lme4\cr
 License: \tab MIT\cr
 }
 
@@ -56,7 +56,7 @@ Shipley, Bill. "The AIC model selection method applied to path analytic models c
 data(shipley2009)
 
 # Load model packages
-library(lmerTest)
+library(lme4)
 library(nlme)
 
 # Create list of models 

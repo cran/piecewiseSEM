@@ -11,8 +11,9 @@ Tests independence claims and calculates Fisher's C statistic and associated p-v
 }
 
 \usage{
-sem.fit(modelList, data, corr.errors, add.vars, grouping.vars, 
-  top.level.vars, adjust.p, basis.set, pvalues.df, model.control, .progressBar) 
+sem.fit(modelList, data, conditional = FALSE, corr.errors = NULL, add.vars = NULL, 
+  grouping.vars = NULL, adjust.p = FALSE, basis.set = NULL, pvalues.df = NULL, 
+  model.control = NULL, .progressBar = TRUE)
 }
 
 \arguments{
@@ -25,6 +26,10 @@ a \code{list} of regressions representing the structural equation model.
 a \code{data.frame} used to construct the structured equations.
 }
 
+\item{conditional}{
+whether conditional variables should be shown in the independence claim (unless the formula is fewer than 30 characters). Default is FALSE.
+}
+
   \item{corr.errors}{
 a vector of variables with correlated errors (separated by "~~").
 }
@@ -35,10 +40,6 @@ a vector of additional variables whose independence claims should be evaluated, 
 
 \item{grouping.vars}{
 an optional variable that represents the highest level of a hierarchical dataset.
-}
-
-\item{top.level.vars}{
-an optional \code{vector} of variables that are identical at the highest level of the hierarchy.
 }
 
 \item{adjust.p}{
@@ -64,13 +65,19 @@ enable optional text progress bar. Default is \code{TRUE}.
 }
 
 \details{
+Independence claims are constructed based on how the variables are treated as in the model list. For example, if the indepedence claim includes a binary variable that is fit to a binomial distribution using an identity link, the function will evaluate the any claims using the same parameters. 
+
+Similarly, for linear mixed effects models construted in \code{lme4} or \code{nlme}, varying slopes and intercepts are treated as in the model list. For example, if a variable is modeled with both a random slope and intercept in any model in the model list, that variable will be modeled with a random slope and intercept when evaluating all independence claims in which it appears. If slopes and intercepts vary for multiple variables, they will appear as such, even if they are conditional.
+
+For models constructed with \code{lme4}, p-values are derived from a t-distribution with degrees of freedom approximated by the Kenward-Rogers correction, as implemented in the \code{pbkrtest} package.
+
+For linear mixed effects models, p-values can be adjusted to accommodate the full model degrees of freedom using the argument \code{p.adjust = TRUE}. For more information, see Shipley 2013.
+
 Variables with correlated errors have no direct relationship but rather are hypothesized to be driven by the same underlying factor. This covariance should be reflected as correlated errors (double-headed arrow). Correlated errors are specified using the syntax from the \code{lavaan} package: \code{var1 ~~ var2}. Variables with correlated errors are ignored in the basis set under the assumption that their correlations will be quantified later using the function \code{sem.coefs}.
 
 The argument \code{add.vars} requires a vector of character strings corresponding to column names in the dataset used to construct the models in \code{modelList}. This is useful if comparing nested SEMs where one wishes to account for additional variables whose independence claims should be evaluated, but which do not have any hypothesized paths in the current SEM. The default assumes there is no additional independence claims that do not appear in the model list.
 
-For linear mixed effects models, p-values can be adjusted to accommodate the full model degrees of freedom using the argument \code{p.adjust = TRUE}. For more information, see Shipley 2013.
-
-\code{top.level.vars} allows the user to optionally specify one or more top level variables for a hierarchical dataset, which will be summarized based on one or more grouping variables specified by \code{grouping.vars}. For example, consider a two-level hierarchy, where variables at the top level have identical values for each level of the grouping variable. If the response is a top level variable (is identically replicated for the grouping variable), this function takes a mean of the lower level variables for each level of the grouping variable, then runs the test of d-separation. If the response is fully replicated (occurs at the lower level), then no aggregation occurs.
+If the data is hierarchical dataset and one or more responses are identical for each level of a grouping factors -- artificially inflating the df -- users can summarize the dataset for each grouping factor(s) specified in the argument \code{grouping.vars}. For example, consider a two-level hierarchy, where variables at the top level have identical values for each level of the grouping variable. If the response is a top level variable (is identically replicated for the grouping variable), this function takes a mean of the lower level variables for each level of the grouping variable, then runs the test of d-separation. If the response is fully replicated (occurs at the lower level), then no aggregation occurs.
 }
 
 \value{
@@ -99,7 +106,7 @@ The model controls in \code{model.control} will be assigned to any subsequent d-
 }
 
 \seealso{
-\code{\link[ggm]{DAG}}, \code{\link{sem.missing.paths}}, \code{\link{sem.fisher.c}}, \code{\link{AIC}}
+\code{\link[ggm]{DAG}}, \code{\link{sem.missing.paths}}, \code{\link{sem.fisher.c}}, \code{\link{AIC}}, \code{\link{get_ddf_Lb}}
 }
 
 \examples{
@@ -107,7 +114,7 @@ The model controls in \code{model.control} will be assigned to any subsequent d-
 data(shipley2009)
 
 # Load model packages
-library(lmerTest)
+library(lme4)
 library(nlme)
 
 # Create list of models 
@@ -132,8 +139,7 @@ sem.fit(shipley2009.modlist, shipley2009)
 
 ### NOT RUN ###
 
-# Repeat but use lme4 to construct all models
-
+# # Repeat but use lme4 to construct all models
 # shipley2009.modlist.lme4 = list(
 #   
 #   lmer(DD~lat + (1|site/tree), na.action = na.omit, 
@@ -149,23 +155,23 @@ sem.fit(shipley2009.modlist, shipley2009)
 #         family=binomial(link = "logit"), data = shipley2009) 
 #   
 # )
-
+#
 # sem.fit(shipley2009.modlist.lme4, shipley2009)
-
-# Add new variable with no hypothesized links
+#
+# # Add new variable with no hypothesized links
 # set.seed(1)
 # add.var = rnorm(nrow(shipley2009), 50, 20)
-
-# Test for independence
+#
+# # Test for independence
 # sem.fit(shipley2009.modlist, shipley2009, add.vars = c("add.var"))
 
 ###
 
-# Add new variable grouped at site level
+# # Add new variable grouped at site level
 # set.seed(2)
 # shipley2009$site.var = rep(rnorm(20, 10, 5), each = 95)
-
-# Add a final model regressing at the level of the grouping variable
+# 
+# # Add a final model regressing at the level of the grouping variable
 # shipley2009.modlist2 = append(
 #   
 #   shipley2009.modlist, list(
@@ -174,45 +180,44 @@ sem.fit(shipley2009.modlist, shipley2009)
 #                                          mean, na.rm = TRUE))) 
 #   
 # )
-
-# Test for independence
-# sem.fit(shipley2009.modlist2, shipley2009, grouping.vars = c("site"), 
-#         top.level.vars = c("site.var"))
+#
+# # Test for independence
+# sem.fit(shipley2009.modlist2, shipley2009, grouping.vars = c("site"))
 
 ###
 
-# Fit model from Shipley (2013)
+# # Fit model from Shipley (2013)
 # data(shipley2013)
 # 
 # shipley2013.modlist = list(
-#   
+# 
 #   lme(x2~x1, random = ~x1 | species, data = shipley2013),
-#   
+# 
 #   lme(x3~x2, random = ~x2 | species, data = shipley2013),
-#   
+# 
 #   lme(x4~x2, random = ~x2 | species, data = shipley2013),
-#   
+# 
 #   lme(x5~x3+x4, random = ~x3+x4 | species, data = shipley2013)
-#   
+# 
 # )
-
+# 
 # sem.fit(shipley2013.modlist, shipley2013) # Convergence error!
-
+# 
 # Specify model controls by switching to old optimizer
 # sem.fit(shipley2013.modlist, shipley2013, model.control = list(lmeControl(opt = "optim")))
 
 ###
 
-# Compare to output from ggm package
+# # Compare to output from ggm package
 # # Load library
 # library(ggm)
 # 
 # # Load data
 # data(marks)
 # # Generate direct acyclic graph (DAG)
-# dag = DAG(mechanics ~ vectors+algebra, 
+# dag = DAG(mechanics ~ vectors+algebra,
 #           vectors ~ algebra,
-#           statistics ~ algebra+analysis, 
+#           statistics ~ algebra+analysis,
 #           analysis ~ algebra)
 # # Run test of directed separation
 # shipley.test(dag, cov(marks), n=88)
@@ -228,5 +233,5 @@ sem.fit(shipley2009.modlist, shipley2009)
 # # Test model fit
 # sem.fisher.c(modelList, marks)
 
-## END NOT RUN ##
+### END NOT RUN ###
 }

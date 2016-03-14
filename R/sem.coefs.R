@@ -12,10 +12,10 @@ sem.coefs = function(modelList, data, standardize = "none", corr.errors = NULL) 
   # Return coefficients
   ret = do.call(rbind, lapply(modelList, function(i) {
     
-    if(standardize != "none") i = update(i, data = newdata)
-    
+    if(standardize != "none") i = get.scaled.model(i, newdata, modelList)
+
     # Extract coefficients and return in a data.frame
-    if(any(class(i) %in% c("lm", "glm", "pgls", "negbin", "glmerMod"))) {
+    if(any(class(i) %in% c("lm", "glm", "pgls", "negbin", "glmerMod", "glmmadmb"))) {
       
       tab = summary(i)$coefficients
       
@@ -71,19 +71,49 @@ sem.coefs = function(modelList, data, standardize = "none", corr.errors = NULL) 
       # Pull out correlated variables
       corr.vars = gsub(" ", "", unlist(strsplit(j, "~~")))
       
-      # Perform significance test and return in a data.frame
-      data.frame(
-        response = paste("~~", corr.vars[1]),
-        predictor = paste("~~", corr.vars[2]),
-        estimate = cor(data[, corr.vars[1]], 
-                       data[, corr.vars[2]], 
-                       use = "complete.obs"),
-        std.error = NA,
-        p.value = 1 - 
-          pt((cor(data[, corr.vars[1]], data[, corr.vars[2]], use = "complete.obs") * sqrt(nrow(data) - 2))/
-               (sqrt(1 - cor(data[, corr.vars[1]], data[, corr.vars[2]], use = "complete.obs")^2)), nrow(data)-2),
-        row.names = NULL
+      # Final model with response
+      corr.mod = modelList[[match(corr.vars[1], sapply(modelList, function(k) paste(formula(k)[2])))]]
+      
+      if(!is.null(corr.mod)) {
+        
+        # Update model to include correlated error
+        if(any(class(corr.mod) %in% c("lme", "glmmPQL")))
+          
+          corr.mod = update(corr.mod, fixed = formula(paste0(". ~ . + ", corr.vars[2]))) else
+            
+            corr.mod = update(corr.mod, formula(paste0(". ~ . + ", corr.vars[2])))
+        
+        # Get partial residuals
+        corr.mod.resids = partial.resid(formula(paste0(corr.vars, collapse = " ~ ")), corr.mod, data, plotit = FALSE)
+        
+        # Perform significance test and return in a data.frame
+        data.frame(
+          response = paste("~~", corr.vars[1]),
+          predictor = paste("~~", corr.vars[2]),
+          estimate = cor(corr.mod.resids[, 1], corr.mod.resids[, 2], use = "complete.obs"),
+          std.error = NA,
+          p.value =  1 - pt(
+            (cor(corr.mod.resids[, 1], corr.mod.resids[, 2], use = "complete.obs") * sqrt(nrow(data) - 2))/
+                 (sqrt(1 - cor(corr.mod.resids[, 1], corr.mod.resids[, 2], use = "complete.obs")^2)), nrow(data)-2),
+          row.names = NULL
+          )
+        
+      } else {
+        
+        data.frame(
+          response = paste("~~", corr.vars[1]),
+          predictor = paste("~~", corr.vars[2]),
+          estimate = cor(data[, corr.vars[1]], 
+                         data[, corr.vars[2]], 
+                         use = "complete.obs"),
+          std.error = NA,
+          p.value = 1 - 
+            pt((cor(data[, corr.vars[1]], data[, corr.vars[2]], use = "complete.obs") * sqrt(nrow(data) - 2))/
+                 (sqrt(1 - cor(data[, corr.vars[1]], data[, corr.vars[2]], use = "complete.obs")^2)), nrow(data)-2),
+          row.names = NULL
         )
+        
+      }
       
     } ) ) )
   

@@ -39,11 +39,15 @@ partial.resid = function(
     
     update(y.model, formula(rhs), control = control) else
       
-      if(any(class(y.model) %in% c("lme", "glmmPQL"))) 
-        
-        update(y.model, fixed = formula(rhs), random = random.formula, control = control) else
-          
-          update(y.model, formula(paste(Reduce(paste, deparse(rhs)), " + ", random.formula, collapse = "")), control = control) 
+      if(any(class(y.model) %in% c("glmmadmb")))
+         
+         update(y.model, formula(rhs)) else
+           
+           if(any(class(y.model) %in% c("lme", "glmmPQL"))) 
+             
+             update(y.model, fixed = formula(rhs), random = random.formula, control = control) else
+               
+               update(y.model, formula(paste(Reduce(paste, deparse(rhs)), " + ", random.formula, collapse = "")), control = control) 
     
   )
   
@@ -65,10 +69,12 @@ partial.resid = function(
         
         # Try to update model
         mod = try(suppressWarnings(suppressMessages(
+          
           update(y.model, 
-                 reformulate(deparse(formula(y.nox.model)[[3]]), response = x), 
-                 control = control, 
-                 data = data)
+                 reformulate(Reduce(paste, deparse(formula(y.nox.model))), response = x), 
+                 control = control,
+                 data = data) 
+          
         ) ), silent = TRUE)
         
         if(class(mod) == "try-error") 
@@ -83,9 +89,9 @@ partial.resid = function(
                    mod }
       
       update(y.model, 
-             reformulate(deparse(formula(y.nox.model)[[3]]), response = x), 
+             reformulate(Reduce(paste, deparse(formula(y.nox.model))), response = x), 
              control = control,
-             data = data)
+             data = data) 
       
     } else
       
@@ -99,15 +105,22 @@ partial.resid = function(
                  
                  if(class(y.model) %in% "glmerMod")
                    
-                   lmer(reformulate(deparse(formula(y.nox.model)[[3]]), response = x),
-                        na.action = na.omit,
-                        # control = control, 
-                        data = data) else 
-                          
-                          update(y.model, 
-                                 reformulate(deparse(formula(y.nox.model)[[3]]), response = x), 
-                                 control = control,
-                                 data = data) 
+                   update(y.model, 
+                          reformulate(Reduce(paste, deparse(formula(y.nox.model))), response = x), 
+                          na.action = na.omit,
+                          control = control,
+                          data = data) else 
+                            
+                            if(class(y.model) %in% "glmmadmb")
+                              
+                              update(y.model, 
+                                     reformulate(Reduce(paste, deparse(formula(y.nox.model))), response = x), 
+                                     data = data) else
+                                       
+                                       update(y.model, 
+                                              reformulate(Reduce(paste, deparse(formula(y.nox.model))), response = x), 
+                                              control = control,
+                                              data = data) 
     
   )
   
@@ -134,6 +147,11 @@ partial.resid = function(
     
   } else x.resids = resid(x.noy.model)
   
+  # Assign names if empty
+  if(is.null(names(y.resids))) names(y.resids) = 1:length(y.resids)
+  
+  if(is.null(names(x.resids))) names(x.resids) = 1:length(x.resids)
+     
   # Bind together in data.frame
   y1 = data.frame(.id = names(y.resids), y.resids)
   
@@ -143,7 +161,9 @@ partial.resid = function(
   resids.data = merge(y1, x1, by = ".id", all = TRUE)[, -1]
   
   # Plot results and regression line
-  if(plotit == TRUE)
+  if(plotit == TRUE) {
+    
+    # plot.new()
     
     plot(resids.data[, 1] ~ resids.data[ ,2], 
          ylab = ifelse(nchar(paste(attr(terms(y.nox.model), "term.labels"), y,  collapse = " + ")) <= 20,
@@ -153,38 +173,40 @@ partial.resid = function(
                        paste(gsub("_", "\\*", x), paste(attr(terms(x.noy.model), "term.labels"), collapse=" + "), sep = " | "),
                        paste(gsub("_", "\\*", x), "| others") )
     )
-  
-  if(plotit == TRUE & plotreg == TRUE | plotCI == TRUE) {
     
-    # Regress residuals(y) ~ residuals(x)
-    new.mod = lm(y.resids ~ x.resids, resids.data)
-    
-    # Create new data.frame
-    newdata = data.frame(
-      seq(min(resids.data[, 2], na.rm = TRUE) - min(resids.data[, 2], na.rm = TRUE) * 0.1, 
-          max(resids.data[, 2], na.rm = TRUE) + max(resids.data[, 2], na.rm = TRUE) * 0.1, 
-          length.out = nrow(resids.data) * 2)
-    )
-    
-    colnames(newdata) = "x.resids"
-    
-    # Generate predictions
-    pred = predict(new.mod, newdata, interval = "confidence", level = 0.95)
-    
-    # Plot fitted curve
-    if(plotit == TRUE) abline(new.mod, col = "red", lwd = 2)
-    
-    # Plot confidence intervals
-    if(plotCI == TRUE) { 
+    if(plotreg == TRUE | plotCI == TRUE) {
       
-      lines(newdata[, 1], pred[, 2], col = "red", lwd = 1.8, lty = 2)
+      # Regress residuals(y) ~ residuals(x)
+      new.mod = lm(y.resids ~ x.resids, resids.data)
       
-      lines(newdata[, 1], pred[, 3], col = "red", lwd = 1.8, lty = 2)
+      # Create new data.frame
+      newdata = data.frame(
+        seq(min(resids.data[, 2], na.rm = TRUE) - min(resids.data[, 2], na.rm = TRUE) * 0.1, 
+            max(resids.data[, 2], na.rm = TRUE) + max(resids.data[, 2], na.rm = TRUE) * 0.1, 
+            length.out = nrow(resids.data) * 2)
+      )
+      
+      colnames(newdata) = "x.resids"
+      
+      # Generate predictions
+      pred = predict(new.mod, newdata, interval = "confidence", level = 0.95)
+      
+      # Plot fitted curve
+      if(plotit == TRUE) abline(new.mod, col = "red", lwd = 2)
+      
+      # Plot confidence intervals
+      if(plotCI == TRUE) { 
+        
+        lines(newdata[, 1], pred[, 2], col = "red", lwd = 1.8, lty = 2)
+        
+        lines(newdata[, 1], pred[, 3], col = "red", lwd = 1.8, lty = 2)
+        
+      }
       
     }
     
   }
-  
+
   if(return.data.frame == TRUE) return(resids.data)
   
 }

@@ -9,12 +9,27 @@ get.dag = function(formulaList) {
       
       rhs = attr(terms(i), "term.labels")
       
-      # Collapse into formula
-      rhs = paste(rhs, collapse = " + ")
-      
       # Insert placeholder for interaction symbol :
       rhs = gsub("\\:", "_____", rhs)
       
+      # Sort interactions so always alphabetical
+      for(j in which(grepl("_____", rhs))) {
+        
+        # Split interactions and sort alphabetically
+        int = unlist(lapply(strsplit(rhs[j], "_____"), sort))
+          
+        # Recombine 
+        int.rec = paste(int, collapse = "_____")
+          
+        # Re-insert into formula
+        rhs[j] = int.rec
+          
+        }
+ 
+      # Collapse into formula
+      rhs = paste(rhs, collapse = " + ")
+      
+      # And return full formula
       formula(paste(lhs, " ~ ", rhs))
       
     }
@@ -22,26 +37,45 @@ get.dag = function(formulaList) {
     else i
     
   )
-  
-  # Get list of variables
-  vars = unique(unlist(lapply(formulaList, function(i)
+
+  # Strip transformations
+  formulaList.new = lapply(formulaList, function(i) {
     
-    unlist(dimnames(attr(terms(i), "factors")))
+    v = all.vars(i)
+    
+    if(length(v) > 1) 
+      
+      formula(paste0(v[1], " ~ ", paste0(v[-1], collapse = " + "))) else
+        
+        formula(paste(v, " ~ ", v))
+    
+  } )
   
-    ) ) ) 
+  # Get list of variables and also strip transformations
+  vars = unlist(lapply(formulaList, function(i) {
+    
+    drop.vars = all.vars(i)[grepl("offset", rownames(attr(terms(i), "factors")))]
+    
+    all.vars(i)[!all.vars(i) %in% drop.vars]
+    
+  } ) )
   
-  # Remove offsets from vars
-  vars = vars[!grepl("offset", vars)]
+  vars = unname(vars[!duplicated(vars)])
   
   # Create adjacency matrix
   amat = do.call(cbind, lapply(vars, function(i) {
  
-    # Isolate variable from formula list
-    form = formulaList[sapply(formulaList, function(j) rownames(attr(terms(j), "factors"))[1] == i)]
+    # Indentify formula where variable is response
+    form.no = which(sapply(formulaList.new, function(j) all.vars(formula(j))[1] == i))
     
-    if(length(form) == 0) rep(0, length(vars)) else 
+    if(length(form.no) == 0) rep(0, length(vars)) else {
       
-      vars %in% attr(terms(form[[1]]), "term.labels") + 0
+      # Isolate variable from formula list
+      form = formulaList.new[[which(sapply(formulaList.new, function(j) all.vars(formula(j))[1] == i))]]
+      
+      vars %in% all.vars(form) + 0
+      
+    }
     
   } ) )
   
