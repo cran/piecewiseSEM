@@ -9,9 +9,34 @@ sem.missing.paths = function(
   if(is.null(basis.set)) basis.set = suppressWarnings(sem.basis.set(modelList, corr.errors, add.vars))
 
   # Add progress bar
-  if(.progressBar == T & length(basis.set) > 0) 
+  if(.progressBar == T & length(basis.set) > 0) pb = txtProgressBar(min = 0, max = length(basis.set), style = 3) else pb = NULL
+  
+  # Identify d-sep tests among endogenous variables and reverse if family != "gaussian"
+  names(basis.set) = 1:length(basis.set)
+  
+  # Get sorted adjacency matrix
+  amat = get.sort.dag(get.formula.list(modelList))
+  
+  # Identify intermediate endogenous variables
+  idx = colnames(amat)[amat[colnames(amat)[colSums(amat) == 0], ] > 0]
+  
+  # Identify variables in the basis set where intermediate endogenous variables are the response
+  if(any(sapply(modelList[sapply(modelList, function(x) all.vars(formula(x))[1] %in% idx)], function(x) 
     
-    pb = txtProgressBar(min = 0, max = length(basis.set), style = 3) else pb = NULL
+    if(any(class(x) %in% c("glm", "negbin", "glmmPQL", "glmerMod"))) FALSE else class(x) != "gaussian"
+    
+    ))) {
+    
+    # Add flag
+    rev = TRUE
+  
+    basis.set = append(basis.set, lapply(which(sapply(basis.set, function(i) i[2] %in% idx)), function(i) 
+      
+      c(basis.set[[i]][2], basis.set[[i]][1], basis.set[[i]][-(1:2)])
+      
+    ) )
+    
+  }
   
   # Perform d-sep tests
   if(length(basis.set) > 0) pvalues.df = do.call(rbind, lapply(1:length(basis.set), function(i) {
@@ -28,7 +53,7 @@ sem.missing.paths = function(
     # Get fixed formula
     rhs = if(length(basis.set[[i]]) <= 2) paste(basis.set[[i]][1]) else
       
-      paste(basis.set[[i]][c(1,3:length(basis.set[[i]]))], collapse = " + ")
+      paste(basis.set[[i]][c(3:length(basis.set[[i]]), 1)], collapse = " + ")
     
     # Get random formula
     random.formula = get.random.formula(basis.mod, rhs, modelList)
@@ -84,37 +109,40 @@ sem.missing.paths = function(
     )
 
     # Get row number from coefficient table for d-sep variable
-    if(any(!class(basis.mod.new) %in% c("pgls"))) {
-      
-      # Get row number of d-sep claim
-      row.num = which(basis.set[[i]][1] == rownames(attr(terms(basis.mod.new), "factors"))[-1]) + 1 
-      
-      # Get row number if interaction variables are switched
-      if(length(row.num) == 0 & grepl("\\:|\\*", basis.set[[i]][1])) {
-        
-        # If interaction is reported as asterisk, convert to semicolon
-        int = gsub(" \\* ", "\\:", basis.set[[i]][1])
-        
-        # Get all combinations of interactions
-        all.ints = sapply(strsplit(int, ":"), function(x) { 
-          
-          datf = expand.grid(rep(list(x), length(x)), stringsAsFactors = FALSE)
-          
-          datf = datf[apply(datf, 1, function(x) !any(duplicated(x))), ]
-          
-          apply(datf, 1, function(x) paste(x, collapse = ":"))
-          
-        } )
-        
-        row.num = which(attr(terms(basis.mod.new), "term.labels") %in% all.ints) + 1
-          
-        }
-      
-      } else {
-        
-        row.num = which(basis.set[[i]][1] == basis.mod.new$varNames)
-         
-      }
+    # if(any(!class(basis.mod.new) %in% c("pgls"))) {
+    #   
+    #   # Get row number of d-sep claim
+    #   row.num = which(basis.set[[i]][1] == rownames(attr(terms(basis.mod.new), "factors"))[-1]) + 1 
+    #   
+    #   # Get row number if interaction variables are switched
+    #   if(length(row.num) == 0 & grepl("\\:|\\*", basis.set[[i]][1])) {
+    #     
+    #     # If interaction is reported as asterisk, convert to semicolon
+    #     int = gsub(" \\* ", "\\:", basis.set[[i]][1])
+    #     
+    #     # Get all combinations of interactions
+    #     all.ints = sapply(strsplit(int, ":"), function(x) { 
+    #       
+    #       datf = expand.grid(rep(list(x), length(x)), stringsAsFactors = FALSE)
+    #       
+    #       datf = datf[apply(datf, 1, function(x) !any(duplicated(x))), ]
+    #       
+    #       apply(datf, 1, function(x) paste(x, collapse = ":"))
+    #       
+    #     } )
+    #     
+    #     row.num = which(attr(terms(basis.mod.new), "term.labels") %in% all.ints) + 1
+    #       
+    #     }
+    #   
+    #   } else {
+    #     
+    #     row.num = which(basis.set[[i]][1] == basis.mod.new$varNames)
+    #      
+    #   }
+    
+    # Get row number of coefficient table
+    row.num = length(attr(terms(basis.mod.new), "term.labels")) + 1
     
     # Return new coefficient table
     ret = if(any(class(basis.mod.new) %in% c("lmerMod", "merModLmerTest"))) {
@@ -186,18 +214,40 @@ sem.missing.paths = function(
     if(.progressBar == TRUE) setTxtProgressBar(pb, i)
     
     # Modify rhs if number of characters exceeds 20
-    if(conditional == FALSE & nchar(rhs) > 30) {
+    rhs.new = 
       
-      rhs = paste(gsub(".\\+.*$", "", rhs), "+ ...")
-      
-    }
+        if(length(basis.set[[i]]) < 3) rhs else {
+          
+          if(conditional == FALSE) 
+            
+            paste0(basis.set[[i]][1], " + ...") else 
+              
+              paste(basis.set[[i]][c(1, 3:length(basis.set[[i]]))], collapse = " + ")
+          
+        }
     
     # Bind in d-sep metadata
-    data.frame(missing.path = paste(basis.set[[i]][2], " ~ ", rhs, sep = ""), ret)
+    data.frame(missing.path = paste(basis.set[[i]][2], " ~ ", rhs.new, sep = ""), ret)
     
   } ) ) else
     
     pvalues.df = data.frame(missing.path = NA, estimate = NA, std.error = NA, DF = NA, crit.value = NA, p.value = NA)
+  
+  # Identify duplicate tests from intermediate endogenous variables
+  dup = names(basis.set)
+  
+  # Return lowest P-value
+  pvalues.df = do.call(rbind, lapply(unique(dup), function(x) {
+    
+    if(length(dup[dup == x]) > 1) 
+      
+      warning("Some d-sep tests are non-symmetrical. The most conservative P-value has been returned. Stay tuned for future developments...")
+    
+    pvalues.df[as.numeric(x), ][which.min(pvalues.df[as.numeric(x), "p.value"]), ]
+    
+  }
+  
+  ) )
   
   # Set degrees of freedom as numeric
   pvalues.df$df = as.numeric(pvalues.df$df)
@@ -207,6 +257,8 @@ sem.missing.paths = function(
   if(any(grepl("...", pvalues.df$missing.path))) 
     
     message("Conditional variables have been omitted from output table for clarity (or use argument conditional = T)")
+  
+  rm(dup)
   
   return(pvalues.df)
   

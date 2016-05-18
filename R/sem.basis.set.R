@@ -1,34 +1,15 @@
 sem.basis.set = function(modelList, corr.errors = NULL, add.vars = NULL) {
-  
+
   # Get list of formula from model list
-  formulaList = lapply(modelList, function(i) 
-    
-    if(all(class(i) %in% c("lm", "glm", "negbin", "lme", "glmmPQL", "gls", "pgls", "glmmadmb"))) formula(i) else 
-      
-      if(all(class(i) %in% c("lmerMod", "merModLmerTest", "glmerMod"))) nobars(formula(i))
-    
-  )
+  formulaList = get.formula.list(modelList, add.vars)
   
-  if(any(unlist(lapply(formulaList, is.null)))) stop("At least one model class not yet supported")
-  
-  # Check to see if any variables in the formula list appear in add.vars
-  if(any(unlist(lapply(formulaList, all.vars)) %in% add.vars)) stop("Variables in the model list appear in add.vars!")
-  
-  # If additional variables are present, add them to the basis set
-  if(!is.null(add.vars)) {
+  # Stop if any response in the model list is the same as any other response
+  if(any(duplicated(sapply(formulaList, function(x) all.vars(x)[1])))) 
     
-    # If interactions are specified with an asterisk, replace with semicolon
-    add.vars = sapply(add.vars, function(x) gsub(" \\* ", "\\:", x))
-    
-    formulaList = append(formulaList, unname(sapply(add.vars, function(x) as.formula(paste(x, x, sep = "~")))))
-    
-  }
+    stop("Duplicate responses detected in the model list. Collapse or re-specify models so that each response appears only once!")
   
-  # Generate adjacency matrix
-  amat = get.dag(formulaList)
-  
-  # Sort adjacency matrix by parent to child nodes
-  amat = get.sort.dag(amat)
+  # Get adjacency matrix and sort by parent to child nodes
+  amat = get.sort.dag(formulaList)
   
   # If intercept only model, add response variable to adjacency matrix
   if(any(unlist(lapply(modelList, function(i) deparse(formula(i)[2]) %in% c("~1", "~ 1"))))) {
@@ -154,9 +135,9 @@ sem.basis.set = function(modelList, corr.errors = NULL, add.vars = NULL) {
     
     if(is.null(i)) NULL else {
       
-      if(grepl("\\:", i[1])) {
+      if(grepl("\\*", i[1])) {
         
-        int = strsplit(i[1], "\\:")[[1]]
+        int = strsplit(i[1], "\\*")[[1]]
         
         if(any(int %in% i[2])) NULL else i 
         

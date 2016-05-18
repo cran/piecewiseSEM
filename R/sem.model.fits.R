@@ -81,9 +81,23 @@ sem.model.fits = function(modelList, aicc = FALSE) {
     # Get R2 for class == merMod
     if(any(class(model) %in% c("lmerMod", "merModLmerTest"))) {
       
+      # Test for non-zero random effects
+      if(any(sapply(VarCorr(model), function(x) !all(attr(x, "stddev") > 0))))
+         
+         stop("Some variance components equal zero. Respecify random structure!")
+
       # Get variance of fixed effects by multiplying coefficients by design matrix
       varF = var(as.vector(fixef(model) %*% t(model@pp$X)))
-   
+      
+      # Check to see if random slopes are present as fixed effects
+      ref = ranef(model)
+      
+      ref.names = ifelse(length(ref) > 1, sapply(ref, names), names(ref))
+      
+      if(any(!ref.names %in% names(fixef(model))))
+        
+        stop("Random slopes not present as fixed effects. This artificially inflates calculations of conditional R2. Respecify fixed structure!")
+      
       # Separate observation variance from variance of random effects
       n.obs = names(unlist(lapply(ranef(model), nrow))[!unlist(lapply(ranef(model), nrow)) == nrow(model@pp$X)])
       
@@ -128,6 +142,11 @@ sem.model.fits = function(modelList, aicc = FALSE) {
     # Get R2 for class == lme
     if(all(class(model) == "lme")) {
       
+      # Test for non-zero random effects
+      if(any(sapply(VarCorr(model), function(x) !all(attr(x, "stddev") > 0))))
+        
+        stop("Some variance components equal zero. Respecify random structure!")
+      
       # Get design matrix of fixed effects from model
       Fmat = model.matrix(eval(model$call$fixed)[-2], model$data)
       
@@ -136,7 +155,16 @@ sem.model.fits = function(modelList, aicc = FALSE) {
       
       # Get variance of fixed effects by multiplying coefficients by design matrix
       varF = var(as.vector(fixef(model) %*% t(Fmat)))
- 
+
+      # Check to see if random slopes are present as fixed effects
+      ref = ranef(model)
+      
+      ref.names = ifelse(length(ref) > 1, sapply(ref, names), names(ref))
+      
+      if(any(!ref.names %in% names(fixef(model))))
+        
+        stop("Random slopes not present as fixed effects. This artificially inflates calculations of conditional R2. Respecify fixed structure!")
+      
       # Get variance of random effects
       if(any(class(try(getVarCov(model), silent = TRUE)) == "try-error")) {
       
@@ -194,6 +222,11 @@ sem.model.fits = function(modelList, aicc = FALSE) {
     # Get R2 for class == "glmerMod"
     if(any(class(model) == "glmerMod")) {
       
+      # Test for non-zero random effects
+      if(any(sapply(VarCorr(model), function(x) !all(attr(x, "stddev") > 0))))
+        
+        stop("Some variance components equal zero. Respecify random structure!")
+      
       # Classify model family
       ret$Family = summary(model)$family
       
@@ -203,9 +236,18 @@ sem.model.fits = function(modelList, aicc = FALSE) {
       # Get variance of fixed effects by multiplying coefficients by design matrix
       varF = var(as.vector(fixef(model) %*% t(model@pp$X)))
       
+      # Check to see if random slopes are present as fixed effects
+      ref = ranef(model)
+      
+      ref.names = ifelse(length(ref) > 1, sapply(ref, names), names(ref))
+      
+      if(any(!ref.names %in% names(fixef(model))))
+        
+        stop("Random slopes not present as fixed effects. This artificially inflates calculations of conditional R2. Respecify fixed structure!")
+      
       # Separate observation variance from variance of random effects
       n.obs = names(unlist(lapply(ranef(model), nrow))[!unlist(lapply(ranef(model), nrow)) == nrow(model@pp$X)])
-      
+
       # Get variance of random effects 
       varRand = sum(
         
