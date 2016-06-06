@@ -1,5 +1,14 @@
 # piecewiseSEM Change Log
 
+### 2016-06-06 Version 1.1.2
+  * Feature addition: significance indicators for P-value outputs
+  * Bug fix: remove random effects from `get.scaled.data`
+  * Feature addition: Use `KRmodcomp` from `pbkrtest` instead of `get_LB_dff` to calculate P-values for `lmer` models
+  * Bug fix: transformations for scaled coefficients no longer fails in `sem.coefs`
+  * Bug fix: all interactions now show up in `sem.coefs` when scaled
+  * Bug fix: random slopes as fixed effects not registering properly in `sem.model.fits`
+  * Bug fix: added \dontrun{} to all help files
+
 ### 2016-05-18 Version 1.1.1
   * Reduced time it takes examples to run
   * Stop: if duplicate responses are detected in the model list

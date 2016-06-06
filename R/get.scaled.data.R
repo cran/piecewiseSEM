@@ -27,20 +27,20 @@ get.scaled.data = function(modelList, data, standardize) {
   # Remove duplicates
   transform.vars = transform.vars[!duplicated(transform.vars)]
   
+  # Strip transformations
+  transform.vars = sapply(transform.vars, function(i) gsub("(.*)\\+.*", "\\1", gsub(".*\\((.*)\\).$", "\\1", i)))
+  
   # For each variables in transform.vars, perform transformation and store as original variable
   for(i in transform.vars) {
     
-    # Get column name to transform
-    col.nm = gsub("(.*)\\+.*", "\\1", gsub(".*\\((.*)\\)", "\\1", i))
-    
     # Get column number
-    col.no = which(colnames(newdata) == gsub(" ", "", col.nm))
+    col.no = which(colnames(newdata) == gsub(" ", "", i))
     
     # Get actual transformation
     trsf = gsub("(.*)\\(.*\\)", "\\1", i)
     
     # Perform transformation
-    newdata[, col.no] = eval(parse(text = gsub(col.nm, paste0("newdata[, ", col.no, "]"), i)))
+    newdata[, col.no] = eval(parse(text = gsub(col.no, paste0("newdata[, ", col.no, "]"), i)))
     
   }
       
@@ -70,8 +70,23 @@ get.scaled.data = function(modelList, data, standardize) {
   # Remove variables that are factors
   vars.to.scale = vars.to.scale[!vars.to.scale %in% colnames(data)[sapply(data, function(x) any(is.factor(x) | is.character(x)))] ]
   
-  # Remove duplicateds variables
+  # Remove variables that appear as random effects
+  rand.mods = which(sapply(modelList, class) %in% c("lmerMod", "merModLmerTest", "glmerMod"))
+ 
+  rand.effs = c()
+  
+  for(i in rand.mods) rand.effs = c(rand.effs, names(ranef(modelList[[i]])))
+
+  # Unnest nested variables
+  rand.effs = unlist(strsplit(rand.effs, ":"))
+  
+  vars.to.scale = vars.to.scale[!vars.to.scale %in% rand.effs]
+  
+  # Remove duplicated variables
   vars.to.scale = vars.to.scale[!duplicated(vars.to.scale)]
+  
+  # Remove transformed variables already scaled 
+  vars.to.scale = vars.to.scale[!vars.to.scale %in% transform.vars]
   
   # Run check to see if variables appear as columns
   if(!all(vars.to.scale %in% colnames(newdata))) stop("Some predictors do not appear in the dataset!")

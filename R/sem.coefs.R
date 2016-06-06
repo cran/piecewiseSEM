@@ -1,4 +1,4 @@
-sem.coefs = function(modelList, data, standardize = "none", corr.errors = NULL) {
+sem.coefs = function(modelList, data = NULL, standardize = "none", corr.errors = NULL) {
   
   if(any(class(modelList) != "list")) modelList = list(modelList)
   
@@ -23,8 +23,8 @@ sem.coefs = function(modelList, data, standardize = "none", corr.errors = NULL) 
                  predictor = rownames(tab)[-1],
                  estimate = tab[-1, 1],
                  std.error = tab[-1, 2],
-                 p.value = tab[-1, 4], 
-                 row.names = NULL)
+                 p.value = tab[-1, 4]
+                 )
       
     } else if(any(class(i) %in% c("gls"))) {
       
@@ -34,8 +34,8 @@ sem.coefs = function(modelList, data, standardize = "none", corr.errors = NULL) 
                  predictor = rownames(tab)[-1],
                  estimate = tab[-1, 1],
                  std.error = tab[-1, 2],
-                 p.value = tab[-1, 4], 
-                 row.names = NULL)
+                 p.value = tab[-1, 4]
+                 )
       
     } else if(any(class(i) %in% c("lme", "glmmPQL"))) {
       
@@ -45,20 +45,42 @@ sem.coefs = function(modelList, data, standardize = "none", corr.errors = NULL) 
                  predictor = rownames(tab)[-1],
                  estimate = tab[-1, 1],
                  std.error = tab[-1, 2],
-                 p.value = tab[-1, 5], 
-                 row.names = NULL)
+                 p.value = tab[-1, 5]
+                 )
       
     } else if(any(class(i) %in% c("lmerMod", "merModLmerTest"))) {
+  
+      tab = suppressMessages(summary(i)$coefficients)
+          
+      # Loop over variables and return P-values
+      kr.p = sapply(names(fixef(i))[-1], function(x) {
+        
+        i.reduced = update(i, as.formula(paste("~ . -", x)))
       
-      tab = summary(as(i, "merModLmerTest"))$coefficients
+        KRmodcomp(i, i.reduced)$test$p.value[1]
+        
+      } )
       
+      # KRSumFun <- function(object, objectDrop, ...) {
+      #   krnames <- c("ndf","ddf","Fstat","p.value","F.scaling")
+      #   r <- if (missing(objectDrop)) {
+      #     setNames(rep(NA,length(krnames)),krnames)
+      #   } else {
+      #     krtest <- KRmodcomp(object,objectDrop)
+      #     unlist(krtest$stats[krnames])
+      #   }
+      #   attr(r,"method") <- c("Kenward-Roger via pbkrtest package")
+      #   r
+      # }
+      # 
+      # kr.p = drop1(i, test = "user", sumFun = KRSumFun)
+
       data.frame(response = Reduce(paste, deparse(formula(i)[[2]])),
                  predictor = rownames(tab)[-1],
                  estimate = tab[-1, 1],
                  std.error = tab[-1, 2],
-                 p.value = tab[-1, 5], 
-                 row.names = NULL) 
-      
+                 p.value = kr.p
+                 ) 
       } 
     
     } ) )
@@ -94,8 +116,7 @@ sem.coefs = function(modelList, data, standardize = "none", corr.errors = NULL) 
           std.error = NA,
           p.value =  1 - pt(
             (cor(corr.mod.resids[, 1], corr.mod.resids[, 2], use = "complete.obs") * sqrt(nrow(data) - 2))/
-                 (sqrt(1 - cor(corr.mod.resids[, 1], corr.mod.resids[, 2], use = "complete.obs")^2)), nrow(data)-2),
-          row.names = NULL
+                 (sqrt(1 - cor(corr.mod.resids[, 1], corr.mod.resids[, 2], use = "complete.obs")^2)), nrow(data)-2)
           )
         
       } else {
@@ -109,9 +130,8 @@ sem.coefs = function(modelList, data, standardize = "none", corr.errors = NULL) 
           std.error = NA,
           p.value = 1 - 
             pt((cor(data[, corr.vars[1]], data[, corr.vars[2]], use = "complete.obs") * sqrt(nrow(data) - 2))/
-                 (sqrt(1 - cor(data[, corr.vars[1]], data[, corr.vars[2]], use = "complete.obs")^2)), nrow(data)-2),
-          row.names = NULL
-        )
+                 (sqrt(1 - cor(data[, corr.vars[1]], data[, corr.vars[2]], use = "complete.obs")^2)), nrow(data)-2)
+          )
         
       }
       
@@ -120,8 +140,29 @@ sem.coefs = function(modelList, data, standardize = "none", corr.errors = NULL) 
   # Order by response and p-value
   ret = ret[with(ret, order(response, p.value)),]
   
-  # Round p-values
+  # Round all numeric values
+  # ret[, sapply(ret, is.numeric)] = apply(ret[, sapply(ret, is.numeric)], 2, round, 4)
+  
+  # Round only P-values
   ret$p.value = round(ret$p.value, 4)
+  
+  # Assign significance indicators
+  sig = sapply(ret$p.value, function(y) {
+    
+    ifelse(y > 0.01 & y < 0.05, "*", 
+           ifelse(y > 0.001 & y <= 0.01, "**",
+                  ifelse(y <= 0.001, "***", "")
+           )
+    )
+    
+  } )
+  
+  ret = cbind(ret, sig)
+  
+  colnames(ret)[ncol(ret)] = ""
+  
+  # Remove rownames
+  rownames(ret) = NULL
   
 #   # If standardize != "none" and interactions present, set SEs and P-values to NA
 #   if(standardize != "none" & any(sapply(modelList, function(x) any(grepl("\\:|\\*", formula(x)))))) {
@@ -134,7 +175,7 @@ sem.coefs = function(modelList, data, standardize = "none", corr.errors = NULL) 
 #     ret[grepl("\\:|\\*", ret$predictor), 4:5] = NA
 #     
 #   }
-    
+  
   return(ret)
 
 }
