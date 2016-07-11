@@ -6,12 +6,12 @@ sem.model.fits = function(modelList, aicc = FALSE) {
   # Check to see if classes are supported
   if(!all(sapply(modelList, function(i) 
     
-    all(class(i) %in% c("lm", "glm", "gls", "pgls", "lme", "lmerMod", "merModLmerTest", "glmerMod")) 
+    all(class(i) %in% c("lm", "glm", "negbin", "gls", "pgls", "lme", "lmerMod", "merModLmerTest", "glmerMod")) 
     
   ) ) ) warning("(Pseudo-)R^2s are not yet supported for some model classes!")
   
   # Check if all responses in the model list are the same
-  same = length(unique(unlist(sapply(modelList, function(x) all.vars(formula(x))[1])))) == 1
+  same = any(duplicated(unlist(sapply(modelList, function(x) all.vars(formula(x))[1]))))
   
   # Apply functions across all models in the model list
   ret = do.call(rbind, lapply(modelList, function(model) {
@@ -46,7 +46,7 @@ sem.model.fits = function(modelList, aicc = FALSE) {
     }
       
     # Get R2 for class == glm
-    if(any(class(model) %in% c("glm", "gls", "pgls"))) {
+    if(any(class(model) %in% c("glm", "negbin", "gls", "pgls"))) {
       
       # Classify model family
       if("glm" %in% class(model)) ret$Family = summary(model)$family[[1]]
@@ -88,15 +88,17 @@ sem.model.fits = function(modelList, aicc = FALSE) {
 
       # Get variance of fixed effects by multiplying coefficients by design matrix
       varF = var(as.vector(fixef(model) %*% t(model@pp$X)))
-      
+
       # Check to see if random slopes are present as fixed effects
-      ref = ranef(model)
-      
-      ref.names = ref.names = sapply(ref, names)
-      
-      if(any(!ref.names %in% names(fixef(model))))
+      random.slopes = if("list" %in% class(ranef(model))) 
         
-        stop("Random slopes not present as fixed effects. This artificially inflates calculations of conditional R2. Respecify fixed structure!")
+        unique(as.vector(sapply(ranef(model), colnames))) else
+          
+          colnames(ranef(model))
+      
+      if(!all(random.slopes %in% names(fixef(model))))
+        
+        warning("Random slopes not present as fixed effects. This artificially inflates calculations of conditional R2. Respecify fixed structure!")
       
       # Separate observation variance from variance of random effects
       n.obs = names(unlist(lapply(ranef(model), nrow))[!unlist(lapply(ranef(model), nrow)) == nrow(model@pp$X)])
@@ -157,13 +159,15 @@ sem.model.fits = function(modelList, aicc = FALSE) {
       varF = var(as.vector(fixef(model) %*% t(Fmat)))
 
       # Check to see if random slopes are present as fixed effects
-      ref = ranef(model)
-      
-      ref.names = ifelse(length(ref) > 1, sapply(ref, names), names(ref))
-      
-      if(any(!ref.names %in% names(fixef(model))))
+      random.slopes = if("list" %in% class(ranef(model))) 
         
-        stop("Random slopes not present as fixed effects. This artificially inflates calculations of conditional R2. Respecify fixed structure!")
+        unique(as.vector(sapply(ranef(model), colnames))) else
+          
+          colnames(ranef(model))
+      
+      if(!all(random.slopes %in% names(fixef(model))))
+        
+        warning("Random slopes not present as fixed effects. This artificially inflates calculations of conditional R2. Respecify fixed structure!")
       
       # Get variance of random effects
       if(any(class(try(getVarCov(model), silent = TRUE)) == "try-error")) {
@@ -237,13 +241,15 @@ sem.model.fits = function(modelList, aicc = FALSE) {
       varF = var(as.vector(fixef(model) %*% t(model@pp$X)))
       
       # Check to see if random slopes are present as fixed effects
-      ref = ranef(model)
-      
-      ref.names = ifelse(length(ref) > 1, sapply(ref, names), names(ref))
-      
-      if(any(!ref.names %in% names(fixef(model))))
+      random.slopes = if("list" %in% class(ranef(model))) 
         
-        stop("Random slopes not present as fixed effects. This artificially inflates calculations of conditional R2. Respecify fixed structure!")
+        unique(as.vector(sapply(ranef(model), colnames))) else
+          
+          colnames(ranef(model))
+      
+      if(!all(random.slopes %in% names(fixef(model))))
+        
+        warning("Random slopes not present as fixed effects. This artificially inflates calculations of conditional R2. Respecify fixed structure!")
       
       # Separate observation variance from variance of random effects
       n.obs = names(unlist(lapply(ranef(model), nrow))[!unlist(lapply(ranef(model), nrow)) == nrow(model@pp$X)])
@@ -297,7 +303,7 @@ sem.model.fits = function(modelList, aicc = FALSE) {
           
         }
         
-      } else if(ret$Family == "poisson") {
+      } else if(ret$Family == "poisson" | grepl("Negative Binomial", ret$Family)) {
         
         # Generate null model (intercept and random effects only, no fixed effects)
         null.model = update(model, formula = paste(". ~ ", get.random.formula(model, "~1", modelList = NULL)))
@@ -454,7 +460,9 @@ sem.model.fits = function(modelList, aicc = FALSE) {
     
   } ) )
   
-  if(any(ret$N <= 40) & colnames(ret)[ncol(ret)] != "AICc") warning("N < 40, consider using aicc = TRUE")
+  if(any(grepl("AIC", colnames(ret))) & any(ret$N <= 40) & colnames(ret)[ncol(ret)] != "AICc") 
+    
+    warning("N < 40, consider using aicc = TRUE")
   
   # Get list of response vectors
   resp = sapply(modelList, function(x) all.vars(formula(x))[1])
@@ -470,6 +478,9 @@ sem.model.fits = function(modelList, aicc = FALSE) {
     colnames(ret)[ncol(ret)] = paste0("d", colnames(ret)[ncol(ret) - 1]) #intToUtf8(0x0394), colnames(ret)[ncol(ret) - 1])
     
   }
+  
+  # Strip negative binomial theta
+  ret$Family = sapply(as.character(ret$Family), function(x) ifelse(grepl("Negative Binomial", x), "Negative Binomial", x))
   
   return(ret)
   

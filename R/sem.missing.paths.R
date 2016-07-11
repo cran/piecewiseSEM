@@ -11,32 +11,8 @@ sem.missing.paths = function(
   # Add progress bar
   if(.progressBar == T & length(basis.set) > 0) pb = txtProgressBar(min = 0, max = length(basis.set), style = 3) else pb = NULL
   
-  # Identify d-sep tests among endogenous variables and reverse if family != "gaussian"
-  names(basis.set) = 1:length(basis.set)
-  
-  # Get sorted adjacency matrix
-  amat = get.sort.dag(get.formula.list(modelList))
-  
-  # Identify intermediate endogenous variables
-  idx = colnames(amat)[amat[colnames(amat)[colSums(amat) == 0], ] > 0]
-  
-  # Identify variables in the basis set where intermediate endogenous variables are the response
-  if(any(sapply(modelList[sapply(modelList, function(x) all.vars(formula(x))[1] %in% idx)], function(x) 
-    
-    if(any(class(x) %in% c("glm", "negbin", "glmmPQL", "glmerMod"))) FALSE else class(x) != "gaussian"
-    
-    ))) {
-    
-    # Add flag
-    rev = TRUE
-  
-    basis.set = append(basis.set, lapply(which(sapply(basis.set, function(i) i[2] %in% idx)), function(i) 
-      
-      c(basis.set[[i]][2], basis.set[[i]][1], basis.set[[i]][-(1:2)])
-      
-    ) )
-    
-  }
+  # Reverse intermediate endogenous variables fitted to non-normal distributions
+  basis.set = endogenous.reverse(basis.set, modelList)
   
   # Perform d-sep tests
   if(length(basis.set) > 0) pvalues.df = do.call(rbind, lapply(1:length(basis.set), function(i) {
@@ -98,7 +74,7 @@ sem.missing.paths = function(
       
       if(is.null(random.formula) | class(basis.mod) == "glmmadmb") 
       
-        update(basis.mod, formula(paste(basis.set[[i]][2], " ~ ", rhs)), data = data) else
+        update(basis.mod, formula = formula(paste(basis.set[[i]][2], " ~ ", rhs)), data = data) else
         
           if(any(class(basis.mod) %in% c("lme", "glmmPQL"))) 
           
@@ -110,39 +86,36 @@ sem.missing.paths = function(
 
     # Get row number from coefficient table for d-sep variable
     # if(any(!class(basis.mod.new) %in% c("pgls"))) {
-    #   
+    # 
     #   # Get row number of d-sep claim
-    #   row.num = which(basis.set[[i]][1] == rownames(attr(terms(basis.mod.new), "factors"))[-1]) + 1 
-    #   
+    #   row.num = which(basis.set[[i]][1] == rownames(attr(terms(basis.mod.new), "factors"))[-1]) + 1
+    # 
     #   # Get row number if interaction variables are switched
     #   if(length(row.num) == 0 & grepl("\\:|\\*", basis.set[[i]][1])) {
-    #     
+    # 
     #     # If interaction is reported as asterisk, convert to semicolon
     #     int = gsub(" \\* ", "\\:", basis.set[[i]][1])
-    #     
+    # 
     #     # Get all combinations of interactions
-    #     all.ints = sapply(strsplit(int, ":"), function(x) { 
-    #       
+    #     all.ints = sapply(strsplit(int, ":"), function(x) {
+    # 
     #       datf = expand.grid(rep(list(x), length(x)), stringsAsFactors = FALSE)
-    #       
+    # 
     #       datf = datf[apply(datf, 1, function(x) !any(duplicated(x))), ]
-    #       
+    # 
     #       apply(datf, 1, function(x) paste(x, collapse = ":"))
-    #       
+    # 
     #     } )
-    #     
+    # 
     #     row.num = which(attr(terms(basis.mod.new), "term.labels") %in% all.ints) + 1
-    #       
+    # 
     #     }
-    #   
+    # 
     #   } else {
-    #     
+    # 
     #     row.num = which(basis.set[[i]][1] == basis.mod.new$varNames)
-    #      
+    # 
     #   }
-    
-    # Get row number of coefficient table
-    row.num = length(attr(terms(basis.mod.new), "term.labels")) + 1
     
     # Return new coefficient table
     ret = if(any(class(basis.mod.new) %in% c("lmerMod", "merModLmerTest"))) {
@@ -156,18 +129,26 @@ sem.missing.paths = function(
       
       # Combine with coefficients from regular ouput
       data.frame(
-        t(coef.table[row.num, 1:2]),
+        t(coef.table[nrow(coef.table), 1:2]),
         kr.p$test$ddf[1],
-        coef.table[row.num, 3],
+        coef.table[nrow(coef.table), 3],
         kr.p$test$p.value[1],
         row.names = NULL
       )
       
-    } else if(any(class(basis.mod.new) %in% c("lm", "glm", "negbin", "pgls", "glmerMod", "glmmadmb")))
+    } else if(any(class(basis.mod.new) %in% c("lm", "glm", "negbin", "pgls", "glmerMod", "glmmadmb"))) {
       
-      as.data.frame(t(unname(summary(basis.mod.new)$coefficients[row.num, ]))) else
+      coef.table = summary(basis.mod.new)$coefficients
       
-        as.data.frame(t(unname(summary(basis.mod.new)$tTable[row.num, ])))  
+      as.data.frame(t(unname(coef.table[nrow(coef.table), ]))) 
+      
+      } else {
+      
+        coef.table = summary(basis.mod.new)$tTable
+        
+        as.data.frame(t(unname(coef.table[nrow(coef.table), ])))  
+        
+      }
     
     # Add df if summary table does not return
     if(length(ret) != 5 & any(class(basis.mod.new) %in% c("lm", "glm", "negbin", "pgls"))) 
@@ -190,19 +171,19 @@ sem.missing.paths = function(
       
       if(any(class(basis.mod.new) %in% c("lme", "glmmPQL"))) {
         
-        t.value = summary(basis.mod.new)$tTable[row.num, 4] 
+        t.value = coef.table[nrow(coef.table), 4] 
         
         ret[5] = 2*(1 - pt(abs(t.value), nobs(basis.mod.new) - sum(apply(basis.mod.new$groups, 2, function(x) length(unique(x))))))
         
-      } else if(any(class(basis.mod.new) %in% c("lmerMod", "glmerMod", "merModLmerTest"))) {
+      } else if(any(class(basis.mod.new) %in% c("lmerMod", "glmerMod"))) {
         
-        z.value = coef.table[row.num, "t value"]
+        z.value = coef.table[nrow(coef.table), 3]
         
         ret[5] = 2*(1 - pt(abs(z.value), nobs(basis.mod.new) - sum(summary(basis.mod.new)$ngrps))) 
         
         } else if(any(class(basis.mod.new) %in% c("glmmadmb"))) {
           
-          z.value = summary(basis.mod.new)$coefficients[row.num, 3]
+          z.value = coef.table[nrow(coef.table), 3]
           
           ret[5] = 2*(1 - pt(abs(z.value), nobs(basis.mod.new) - sum(summary(basis.mod.new)$npar))) 
       

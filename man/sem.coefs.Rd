@@ -11,7 +11,7 @@ Extracts path coefficients for a piecewise structural equation model (SEM).
 }
 
 \usage{
-sem.coefs(modelList, data, standardize = "none", corr.errors)
+sem.coefs(modelList, data, standardize = "none", corr.errors, intercept = FALSE)
 }
 
 \arguments{
@@ -30,6 +30,10 @@ specifies the type of standardization to perform: \code{"none"}, \code{"scale"},
 
   \item{corr.errors}{
 a vector of variables with correlated errors (separated by \code{~~}).
+}
+
+  \item{intercept}{
+whether values and significance tests for the intercept should be returned; default is \code{FALSE}.
 }
 
 }
