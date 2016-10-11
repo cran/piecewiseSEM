@@ -1,12 +1,13 @@
 sem.basis.set = function(modelList, corr.errors = NULL, add.vars = NULL) {
-
+  
   # Get list of formula from model list
   formulaList = get.formula.list(modelList, add.vars)
   
   # Stop if any response in the model list is the same as any other response
   if(any(duplicated(sapply(formulaList, function(x) all.vars(x)[1])))) 
     
-    stop("Duplicate responses detected in the model list. Collapse or re-specify models so that each response appears only once!")
+    stop("Duplicate responses detected in the model list.\n
+         Collapse multiple single regressions into a single multiple regression so that each response appears only once!")
   
   # Get adjacency matrix and sort by parent to child nodes
   amat = get.sort.dag(formulaList)
@@ -36,71 +37,6 @@ sem.basis.set = function(modelList, corr.errors = NULL, add.vars = NULL) {
   
   # Replace placeholder for interaction symbol with :
   basis.set = lapply(basis.set, function(i) gsub(paste("_____", collapse = ""), "\\:", i))
-  
-  # Filter exogenous predictors from the basis set
-  basis.set = filter.exogenous(modelList, basis.set, corr.errors, add.vars)
-  
-  # Re-apply transformations
-  basis.set = lapply(basis.set, function(i) {
-    
-    i.new = i
-    
-    # Find response in original formula list
-    form = formulaList[[which(sapply(formulaList, function(x) all.vars(x)[1] == i[2]))]]
-    
-    # Get transformed vars for that response
-    transform.vars = rownames(attr(terms(form), "factors"))
-    
-    # Get stripped vars for that response
-    stripped.vars = all.vars(form)
-    
-    # Index over untransformed vars and replace
-    i.new[which(i %in% stripped.vars)] = transform.vars[which(stripped.vars %in% i)]
-    
-    # Extract vector of predictors from all models
-    preds.list = lapply(formulaList, all.vars)
-    
-    # Find formulae that contain untransformed variables
-    for(j in which(!i.new %in% transform.vars)) {
-      
-      # Get list of transformed variables
-      j.new = lapply(formulaList, function(k) {
-        
-        pred.vars = all.vars(k)
-        
-        # Sort interactions so always alphabetical
-        for(l in which(grepl("\\:", pred.vars))) {
-          
-          # Split interactions and sort alphabetically
-          int = unlist(lapply(strsplit(pred.vars[j], "\\:"), sort))
-          
-          # Recombine 
-          int.rec = paste(int, collapse = ":")
-          
-          # Re-insert into formula
-          pred.vars[l] = int.rec
-          
-        }
-        
-        rownames(attr(terms(k), "factors"))[pred.vars == i.new[j]]
-        
-      } )
-      
-      # Name and order transformed variables by adjacency matrix
-      names(j.new) = sapply(formulaList, function(x) all.vars(x)[1])
-      
-      j.new = j.new[colnames(amat)]
-      
-      # Choose first instance where variable is not null
-      new.var = unlist(j.new[sapply(j.new, function(x) length(x) > 0)])[1]
-      
-      if(!is.null(new.var)) i.new[j] = new.var
-      
-    }
-    
-    return(i.new)
-    
-  } )
   
   # If correlated errors are present, remove them from the basis set
   if(!is.null(corr.errors)) {
@@ -177,10 +113,109 @@ sem.basis.set = function(modelList, corr.errors = NULL, add.vars = NULL) {
       
     } )
   
+  
+  ### TEMPORARY FIX ###
+  
+  # Reverse intermediate endogenous variables fitted to non-normal distributions
+  basis.set = endogenous.reverse(basis.set, modelList, add.vars)
+  
+  ### TEMPORARY FIX ###
+  
+  
+  # Filter exogenous predictors from the basis set
+  basis.set = filter.exogenous(modelList, basis.set, corr.errors, add.vars)
+  
+  # Re-apply transformations
+  basis.set = lapply(basis.set, function(i) {
+    
+    # Get list of transformed predictors
+    t.pvars = lapply(formulaList, function(x) colnames(attr(terms(x), "factors")))
+    
+    # Get list of untransformed predictors
+    pvars = lapply(formulaList, function(i) {
+      
+      if(grepl("cbind\\(.*\\)", paste(formula(i)[2]))) 
+        
+        v = all.vars(i)[-(1:2)] else
+          
+          v = all.vars(i)[-1]
+        
+        return(v)
+        
+    } )
+    
+    # Get list of transformed responses
+    t.rvars = lapply(formulaList, function(x) gsub(" " , "", rownames(attr(terms(x), "factors"))[1]))
+    
+    # Get list of untransformed responses
+    rvars = lapply(formulaList, function(i) {
+      
+      if(grepl("cbind\\(.*\\)", paste(formula(i)[2]))) 
+        
+        v = paste0("cbind(", paste(all.vars(i)[1:2], collapse = ","), ")") else
+          
+          v = all.vars(i)[1]
+        
+        return(gsub(" " , "", v))
+        
+    } )
+    
+    # Re-transform predictors
+    for(j in (1:length(i))[-2]) {
+      
+      # Get variable index for lookup
+      idx = cbind(
+        
+        which(sapply(pvars, function(k) any(k %in% i[j]))),
+        
+        unlist(sapply(pvars, function(l) which(l == i[j])))
+        
+      )
+      
+      if(sum(idx) > 0) {
+        
+        # Conduct lookup
+        t.pvar = sapply(1:nrow(idx), function(m) t.pvars[[idx[m, 1]]][idx[m, 2]] )
+        
+        t.pvar = t.pvar[!duplicated(t.pvar)]
+        
+        # Replace predictors
+        if(length(t.pvar) > 0) i[j] = t.pvar[which.max(sapply(t.pvar, function(p) nchar(p)))]
+        
+      }
+      
+    }
+    
+    # Get variable index for lookup
+    idx = cbind(
+      
+      which(sapply(rvars, function(k) any(k %in% i[2]))),
+      
+      unlist(sapply(rvars, function(l) which(l == i[2])))
+      
+    )
+    
+    if(sum(idx) != 0) {
+      
+      # Conduct lookup
+      t.rvar = sapply(1:nrow(idx), function(m) t.rvars[[idx[m, 1]]][idx[m, 2]] )
+      
+      t.rvar = t.rvar[!duplicated(t.rvar)]
+      
+      # Replace predictors
+      if(length(t.rvar) > 0) i[2] = t.rvar[which.max(sapply(t.rvar, function(p) nchar(p)))]
+      
+    }
+    
+    return(i)
+    
+  } )
+  
   # Remove NULLs from basis set
   basis.set = basis.set[!sapply(basis.set, is.null)]
   
-  if(length(basis.set) < 1) warning("All endogenous variables are conditionally dependent.\nTest of directed separation not possible!", call. = FALSE)
+  # Re-assign names from dropped entries
+  names(basis.set) = as.numeric(as.factor(as.numeric(names(basis.set))))
   
   return(basis.set)
   

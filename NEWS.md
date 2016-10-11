@@ -1,5 +1,18 @@
 # piecewiseSEM Change Log
 
+### 2016-10-11 Version 1.2.0
+  * Feature addition: new function `acyclic` to test for acyclic DAGs
+  * Feature addition: new function `rsquared` for easier calling of `sem.model.fits`
+  * Bug fix: order of adjacency matrix in `get.sort.dag`
+  * Feature addition: model class `glmmTMB`
+  * Bug fix: inclusion of transformed variables as additional boxes in `sem.plot`
+  * Bug fix: specification of invalid models in `endogenous.reverse`
+  * Feature addition: implemented two-column binding as response in GLM(M)s
+  * Bug fix: memory allocation error in `sem.model.fits`
+  * Bug fix: inclusion of entries in the basis set without corresponding models in the model list in `endogenous.reverse`
+  * Bug fix: crossed random effects in `get.random.formula` not returning correct random slopes
+  * Bug fix: `gls` models in `sem.missing.paths` could not update basis model
+
 ### 2016-07-05 Version 1.1.3
   * Feature addition: report of intercepts in `sem.coefs`
   * Bug fix: warning with random slopes not present as fixed effects in `sem.model.fits`

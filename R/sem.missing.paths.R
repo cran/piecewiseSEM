@@ -11,9 +11,6 @@ sem.missing.paths = function(
   # Add progress bar
   if(.progressBar == T & length(basis.set) > 0) pb = txtProgressBar(min = 0, max = length(basis.set), style = 3) else pb = NULL
   
-  # Reverse intermediate endogenous variables fitted to non-normal distributions
-  basis.set = endogenous.reverse(basis.set, modelList)
-  
   # Perform d-sep tests
   if(length(basis.set) > 0) pvalues.df = do.call(rbind, lapply(1:length(basis.set), function(i) {
     
@@ -22,7 +19,7 @@ sem.missing.paths = function(
       
       if(any(class(j) == "pgls")) j = j$formula
       
-      rownames(attr(terms(j), "factors"))[1] == basis.set[[i]][2]
+      gsub(" ", "", rownames(attr(terms(j), "factors"))[1]) == basis.set[[i]][2]
     
     } ) ) ]]
       
@@ -70,19 +67,21 @@ sem.missing.paths = function(
     control = get.model.control(basis.mod, model.control)
     
     # Update basis model with new formula and random structure based on d-sep
-    basis.mod.new = suppressWarnings(
+    basis.mod.new = suppressMessages(suppressWarnings(
       
       if(is.null(random.formula) | class(basis.mod) == "glmmadmb") 
       
-        update(basis.mod, formula = formula(paste(basis.set[[i]][2], " ~ ", rhs)), data = data) else
+        update(basis.mod, formula(paste(basis.set[[i]][2], " ~ ", rhs)), control = control, data = data) else
         
           if(any(class(basis.mod) %in% c("lme", "glmmPQL"))) 
           
             update(basis.mod, fixed = formula(paste(basis.set[[i]][2], " ~ ", rhs)), random = random.formula, control = control, data = data) else
             
-              update(basis.mod, formula = formula(paste(basis.set[[i]][2], " ~ ", rhs, " + ", random.formula)), control = control, data = data) 
+              if(any(class(basis.mod) %in% "glmmTMB")) update(basis.mod, formula = formula(paste(basis.set[[i]][2], " ~ ", rhs, " + ", random.formula)), data = data) else
+                
+                update(basis.mod, formula = formula(paste(basis.set[[i]][2], " ~ ", rhs, " + ", random.formula)), control = control, data = data)
       
-    )
+    ) )
 
     # Get row number from coefficient table for d-sep variable
     # if(any(!class(basis.mod.new) %in% c("pgls"))) {
@@ -142,6 +141,12 @@ sem.missing.paths = function(
       
       as.data.frame(t(unname(coef.table[nrow(coef.table), ]))) 
       
+      } else if(any(class(basis.mod.new) == "glmmTMB")) {
+        
+        coef.table = summary(basis.mod.new)$coefficients$cond
+        
+        as.data.frame(t(unname(coef.table[nrow(coef.table), ])))  
+        
       } else {
       
         coef.table = summary(basis.mod.new)$tTable
@@ -187,7 +192,13 @@ sem.missing.paths = function(
           
           ret[5] = 2*(1 - pt(abs(z.value), nobs(basis.mod.new) - sum(summary(basis.mod.new)$npar))) 
       
-        }
+        } else if(any(class(basis.mod.new) %in% c("glmmTMB"))) {
+          
+          z.value = coef.table[nrow(coef.table), 3]
+          
+          ret[5] = 2*(1 - pt(abs(z.value), nobs(basis.mod.new) - sum(summary(basis.mod.new)$ngrps$cond))) 
+          
+        } 
       
     }
   
@@ -217,24 +228,28 @@ sem.missing.paths = function(
   dup = names(basis.set)
   
   # Return lowest P-value
-  pvalues.df = do.call(rbind, lapply(unique(dup), function(x) {
-    
-    if(length(dup[dup == x]) > 1) 
+  if(any(duplicated(dup))) {
+  
+    pvalues.df = do.call(rbind, lapply(unique(dup), function(x) {
       
-      warning("Some d-sep tests are non-symmetrical. The most conservative P-value has been returned. Stay tuned for future developments...")
+      if(length(dup[dup == as.numeric(x)]) > 1) 
+        
+        warning("Some d-sep tests are non-symmetrical. The most conservative P-value has been returned. Stay tuned for future developments...")
+      
+      pvalues.df[as.numeric(x), ][which.min(pvalues.df[as.numeric(x), "p.value"]), ]
+      
+    }
     
-    pvalues.df[as.numeric(x), ][which.min(pvalues.df[as.numeric(x), "p.value"]), ]
+    ) )
     
   }
-  
-  ) )
-  
+    
   # Set degrees of freedom as numeric
   pvalues.df$df = round(as.numeric(pvalues.df$df), 1)
   
   if(!is.null(pb)) close(pb)  
   
-  if(any(grepl("...", pvalues.df$missing.path))) 
+  if(any(grepl("...", pvalues.df$missing.path)) & conditional != TRUE) 
     
     message("Conditional variables have been omitted from output table for clarity (or use argument conditional = T)")
   
