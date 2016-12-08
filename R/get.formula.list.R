@@ -3,7 +3,7 @@ get.formula.list = function(modelList, add.vars = NULL) {
   # Get list of formula from model list
   formulaList = lapply(modelList, function(i) 
     
-    if(all(class(i) %in% c("lm", "glm", "negbin", "lme", "glmmPQL", "gls", "pgls", "glmmadmb"))) formula(i) else 
+    if(all(class(i) %in% c("lm", "rq", "glm", "negbin", "lme", "glmmPQL", "gls", "pgls", "glmmadmb"))) formula(i) else 
       
       if(all(class(i) %in% c("lmerMod", "merModLmerTest", "glmerMod", "glmmTMB"))) nobars(formula(i))
     
@@ -55,6 +55,10 @@ get.formula.list = function(modelList, add.vars = NULL) {
     else i
     
   )
+  
+  if(any(sapply(formulaList, function(x) grepl("poly", x)))) 
+
+      stop("Polynomials computed within the regression are not yet allowed.\nCompute externally and supply each component as a separate variable!")
   
   return(formulaList)
   

@@ -13,7 +13,7 @@ Piecewise Structural Equation Modeling
 \description{
 Implements piecewise structural equation modeling in R, complete with goodness-of-fit tests and retrieval of model coefficients. Compared with traditional variance-covariance based SEM, piecewise SEM allows for fitting of models to different distributions and/or incorporates hierarchical/nested random structures.
 
-Supported model classes include: `lm`, `glm`, `glm.nb`, `gls`, `pgls`, `merMod`, `merModLmerTest`, `lme`, `glmmPQL`, `glmmadmb`, and `glmmTMB`.
+Supported model classes include: `lm`, `rq`, `glm`, `glm.nb`, `gls`, `pgls`, `merMod`, `merModLmerTest`, `lme`, `glmmPQL`, `glmmadmb`, and `glmmTMB`.
 }
 
 \details{
@@ -21,8 +21,8 @@ Supported model classes include: `lm`, `glm`, `glm.nb`, `gls`, `pgls`, `merMod`,
 \tabular{ll}{
 Package: \tab piecewiseSEM\cr
 Type: \tab Package\cr
-Version: \tab 1.2.0\cr
-Date: \tab 2016-10-11\cr
+Version: \tab 1.2.1\cr
+Date: \tab 2016-12-06\cr
 Depends: \tab R (3.3), ggm, lavaan, nlme, pbkrtest\cr
 Suggests: \tab MASS, lme4\cr
 License: \tab MIT\cr

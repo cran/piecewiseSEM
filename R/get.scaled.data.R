@@ -30,24 +30,42 @@ get.scaled.data = function(modelList, data, standardize) {
   transform.vars = transform.vars[!duplicated(transform.vars)]
   
   # Strip transformations
-  transform.vars = sapply(transform.vars, function(i) gsub("(.*)\\+.*", "\\1", gsub(".*\\((.*)\\).$", "\\1", i)))
+  transform.vars2 = sapply(transform.vars, function(i) 
+    
+    gsub(" ", "", 
+         gsub(".*([[:alpha:]]).*", "\\1", 
+              gsub(".*\\((.*)\\).*", "\\1", i)
+         )
+    )
+    
+  )
   
   # For each variables in transform.vars, perform transformation and store as original variable
-  for(i in transform.vars) {
+  if(length(transform.vars) > 0) 
     
-    # Get column number
-    col.no = which(colnames(newdata) == gsub(" ", "", i))
-    
-    # Get actual transformation
-    trsf = gsub("(.*)\\(.*\\)", "\\1", i)
-    
-    # Perform transformation
-    newdata[, col.no] = eval(parse(text = gsub(col.no, paste0("newdata[, ", col.no, "]"), i)))
-    
-  }
+      for(i in 1:length(transform.vars2)) {
+      
+      # Perform transformation
+      newdata[, transform.vars2[i]] = 
+        
+        sapply(newdata[, transform.vars2[i]], function(x) 
+          
+          eval(parse(text = gsub(transform.vars2[i], x, transform.vars[i])))
+          
+          )
+      
+    }
       
   # Get variables to scale, ignoring variables that are modeled to non-normal distributions
-  vars = unlist(lapply(modelList, function(x) all.vars(formula(x))))
+  vars = unlist(lapply(modelList, function(x) {
+    
+    if(grepl("cbind", deparse(formula(x)))) 
+      
+      all.vars(formula(x))[-c(1:2)] else
+        
+        all.vars(formula(x))
+    
+    } ) )
   
   vars = vars[!duplicated(vars)]
   
@@ -97,13 +115,13 @@ get.scaled.data = function(modelList, data, standardize) {
   vars.to.scale = vars.to.scale[!duplicated(vars.to.scale)]
   
   # Remove transformed variables already scaled 
-  vars.to.scale = vars.to.scale[!vars.to.scale %in% transform.vars]
+  vars.to.scale = vars.to.scale[!vars.to.scale %in% gsub(" ", "", transform.vars)]
   
   # Run check to see if variables appear as columns
   if(!all(vars.to.scale %in% colnames(newdata))) stop("Some predictors do not appear in the dataset!")
   
   # Scale those variables by mean and SD, or by range
-  newdata[, vars.to.scale] = apply(newdata[, vars.to.scale], 2, function(x) {
+  newdata[, vars.to.scale] = apply(newdata[, vars.to.scale, drop = FALSE], 2, function(x) {
     
     if(standardize == "scale") scale(x) else
       

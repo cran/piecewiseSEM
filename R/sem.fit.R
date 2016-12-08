@@ -1,31 +1,45 @@
 sem.fit = function(
   
   modelList, data, conditional = FALSE, corr.errors = NULL, add.vars = NULL, grouping.vars = NULL, 
-  adjust.p = FALSE, basis.set = NULL, pvalues.df = NULL, model.control = NULL, 
+  grouping.fun = mean, adjust.p = FALSE, basis.set = NULL, pvalues.df = NULL, model.control = NULL, 
   .progressBar = TRUE
   
   ) {
   
   if(is.null(data)) stop("Must supply dataset")
   
-  if(!all(unlist(lapply(modelList, nobs)))) warning("All models do not have the same number of observations")
+  n.obs = sapply(modelList, function(x) {
+    
+    if(class(x) == "rq") 
+      
+      length(na.omit(residuals(x))) else
+        
+        nobs(x)
+    
+  } )
+  
+  if(!all(n.obs)) warning("All models do not have the same number of observations")
   
   # Get basis set
-  if(is.null(basis.set)) basis.set = sem.basis.set(modelList, corr.errors, add.vars)
+  if(is.null(basis.set)) basis.set = suppressMessages(suppressWarnings(
+    
+    sem.basis.set(modelList, corr.errors, add.vars)
+    
+  ) ) 
   
   # Conduct d-sep tests
   if(is.null(pvalues.df)) pvalues.df = sem.missing.paths(
     
     modelList, data, conditional, corr.errors, add.vars, grouping.vars,
-    adjust.p, basis.set, model.control, .progressBar
-    
+    grouping.fun, adjust.p, basis.set, model.control, .progressBar
+  
   )
   
   # Derive Fisher's C statistic and compare to Chi-squared distribution
   fisher.c = sem.fisher.c(
     
     modelList, data, corr.errors, add.vars, grouping.vars, 
-    adjust.p, basis.set, pvalues.df, model.control, .progressBar
+    grouping.fun, adjust.p, basis.set, pvalues.df, model.control, .progressBar
     
   )
   
@@ -33,7 +47,7 @@ sem.fit = function(
   AIC.c = sem.aic(
     
     modelList, data, corr.errors, add.vars, grouping.vars,
-    adjust.p, basis.set, pvalues.df, model.control, .progressBar
+    grouping.fun, adjust.p, basis.set, pvalues.df, model.control, .progressBar
     
   )
   

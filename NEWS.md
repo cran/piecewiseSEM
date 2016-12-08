@@ -1,5 +1,13 @@
 # piecewiseSEM Change Log
 
+### 2016-12-06 Version 1.2.1
+  * Bug fix: use of `standardize = "scale"` in `sem.coefs` with `cbind` in `glmer`
+  * Warning: use of `poly` polynomials in model formula 
+  * Feature addition: support for models of class `rq`
+  * Bug fix: error in scaling of transformed variables in `get.scaled.data`
+  * Bug fix: `sem.basis.set` failed to remove variables regressed against their interaction
+  * Bug fix: multiple levels of `grouping.vars` in `sem.fit`
+
 ### 2016-10-11 Version 1.2.0
   * Feature addition: new function `acyclic` to test for acyclic DAGs
   * Feature addition: new function `rsquared` for easier calling of `sem.model.fits`
