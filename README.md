@@ -1,19 +1,23 @@
 # piecewiseSEM: Piecewise Structural Equation Modeling in R
+[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/piecewiseSEM)](https://cran.r-project.org/package=piecewiseSEM)
 
-## Version 2.0.0
-## Last updated: 11 June 2018
+## Getting Help
+See our website at http://jslefche.github.io/piecewiseSEM/
+  
+## Version 2.0.1
+## Last updated: 25 June 2018
 
 This version is a major update to the `piecewiseSEM` package that usesa completely revised syntax that better reproduces the base R syntax and output. It is highly recommended that consult `vignette("piecewiseSEM")` even if you have used the package before as it documents the many changes.
 
-It also incorporates new functionality in the form of coefficient standardization and updated methods for R^2 for mixed models. 
+It also incorporates new functionality in the form of coefficient standardization and updated methods for R^2 for mixed models.
 
 Currently supported model classes: `lm, glm, gls, pgls, sarlm, lme, glmmPQL, lmerMod, merModLmerTest, glmerMod`
 
 ### Example
 ```
-# Install from github
+# Install development branch from github
 library(devtools)
-install_github("jslefche/piecewiseSEM", build_vignette = TRUE)
+install_github("jslefche/piecewiseSEM@devel", build_vignette = TRUE)
 
 # Load library
 library(piecewiseSEM)
@@ -22,7 +26,7 @@ library(piecewiseSEM)
 vignette("piecewiseSEM")
 
 # Create fake data
-set.seed(1) 
+set.seed(1)
 
 data <- data.frame(
   x = runif(100),
@@ -31,7 +35,7 @@ data <- data.frame(
   y3 = runif(100)
 )
 
-# Store in SEM list 
+# Store in SEM list
 modelList <- psem(
   lm(y1 ~ x, data),
   glm(y2 ~ x, "poisson", data),

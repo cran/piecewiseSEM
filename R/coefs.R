@@ -75,7 +75,7 @@ coefs <- function(modelList, standardize = "scale", standardize.type = "latent.l
 
 }
 
-#' Get raw (understandardized) coefficients from model
+#' Get raw (undstandardized) coefficients from model
 #' 
 #' @keywords internal
 #' 
@@ -97,7 +97,7 @@ unstdCoefs <- function(modelList, data = NULL, intercepts = FALSE) {
       
       ret <- cerror(i, modelList, data) else {
         
-        if(all(class(i) %in% c("lm", "glm", "negbin", "lmerMod", "glmerMod", "merModLmerTest", "pgls", "phylolm", "phyloglm"))) {
+        if(all(class(i) %in% c("lm", "glm", "negbin", "lmerMod", "glmerMod", "merModLmerTest", "lmerModLmerTest", "pgls", "phylolm", "phyloglm"))) {
           
           ret <- as.data.frame(summary(i)$coefficients)
           
@@ -107,11 +107,13 @@ unstdCoefs <- function(modelList, data = NULL, intercepts = FALSE) {
           
           if(all(class(i) %in% c("phylolm", "phyloglm"))) ret <- cbind(ret[, 1:2], DF = i$n, ret[, c(3, 6)])
           
-          if(all(class(i) %in% c("lmerMod", "merModLmerTest"))) {
+          if(intercepts == FALSE) ret <- ret[rownames(ret) != "(Intercept)", ]
+          
+          if(all(class(i) %in% c("lmerMod", "merModLmerTest",  "lmerModLmerTest"))) {
             
-            krp <- KRp(i, all.vars_trans(formula(i))[-1], data, intercepts = TRUE)
+            krp <- KRp(i, all.vars_trans(formula(i))[-1], data, intercepts = intercepts)
             
-            ret <- as.data.frame(append(as.data.frame(ret), list(DF = krp[1,]), after = 2))
+            ret <- data.frame(append(as.data.frame(ret), list(DF = krp[1,]), after = 2))
             
             ret[, "Pr(>|t|)"] <- krp[2, ]
             
@@ -146,8 +148,6 @@ unstdCoefs <- function(modelList, data = NULL, intercepts = FALSE) {
         names(ret) <- c("Response", "Predictor", "Estimate", "Std.Error", "DF", "Crit.Value", "P.Value")
         
       }
-    
-    if(intercepts == FALSE) ret <- ret[ret$Predictor != "(Intercept)", ]
     
     return(ret)
     
@@ -362,7 +362,7 @@ scaleGLM <- function(model, standardize = "scale", standardize.type = "latent.li
 
     y <- all.vars_notrans(model)[1]
 
-    data <- getSingleData(model)
+    data <- GetSingleData(model)
 
     R <- cor(data[, y], predict(model, type = "response"))
 

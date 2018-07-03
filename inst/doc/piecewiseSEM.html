@@ -12,7 +12,7 @@
 
 <meta name="author" content="Jonathan S. Lefcheck" />
 
-<meta name="date" content="2018-06-11" />
+<meta name="date" content="2018-07-03" />
 
 <title>piecewiseSEM: Piecewise Structural Equation Modeling in R</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">piecewiseSEM: Piecewise Structural Equation Modeling in R</h1>
 <h4 class="author"><em>Jonathan S. Lefcheck</em></h4>
-<h4 class="date"><em>2018-06-11</em></h4>
+<h4 class="date"><em>2018-07-03</em></h4>
 
 
 <div id="TOC">
@@ -134,9 +134,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Load required libraries</span>
 <span class="kw">library</span>(piecewiseSEM)</code></pre></div>
 <pre><code>## 
-##   This is piecewiseSEM version 2.0.
+##   This is piecewiseSEM version 2.0.1
 ## 
-##   If you have used the package before, it is strongly recommended you read Section 3 of the vignette('piecewiseSEM') to familiarize yourself with the new syntax.
+##   If you have used the package before, it is strongly recommended you read Section 3 of the vignette('piecewiseSEM') to familiarize yourself with the new syntax
 ## 
 ##   Questions or bugs can be addressed to &lt;jlefcheck@bigelow.org&gt;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model &lt;-<span class="st"> </span><span class="kw">psem</span>(<span class="kw">lm</span>(y1 <span class="op">~</span><span class="st"> </span>x1, dat), <span class="kw">lm</span>(y1 <span class="op">~</span><span class="st"> </span>y2, dat), <span class="kw">lm</span>(y2 <span class="op">~</span><span class="st"> </span>x1, dat), <span class="kw">lm</span>(y3 <span class="op">~</span><span class="st"> </span>y1, dat))</code></pre></div>
@@ -145,45 +145,45 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model &lt;-<span class="st"> </span><span class="kw">psem</span>(<span class="kw">lm</span>(y1 <span class="op">~</span><span class="st"> </span>x1 <span class="op">+</span><span class="st"> </span>y2, dat), <span class="kw">lm</span>(y2 <span class="op">~</span><span class="st"> </span>x1, dat), <span class="kw">lm</span>(y3 <span class="op">~</span><span class="st"> </span>y1, dat))</code></pre></div>
 <p>To evaluate the model, we call <code>summary</code> on the <code>psem</code> object.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(model, <span class="dt">.progressBar =</span> F)</code></pre></div>
-<pre><code>## $name
-## [1] &quot;model&quot;
+<pre><code>## 
+## Structural Equation Model of model 
 ## 
-## $call
-## [1] &quot;y1 ~ x1 + y2\n  y2 ~ x1\n  y3 ~ y1&quot;
+## Call:
+##   y1 ~ x1 + y2
+##   y2 ~ x1
+##   y3 ~ y1
 ## 
-## $dTable
+##     AIC      BIC
+##  22.353   41.473
+## 
+## ---
+## Tests of directed separation:
+## 
 ##    Independ.Claim Estimate Std.Error DF Crit.Value P.Value 
-## 1 y3  ~  x1 + ...   0.0942    0.1491 47     0.6317  0.5306 
-## 2 y3  ~  y2 + ...   0.1319    0.1544 46     0.8540  0.3975 
+##   y3  ~  x1 + ...  -0.0539    0.1447 47    -0.3723  0.7114 
+##   y3  ~  y2 + ...   0.1182    0.1495 46     0.7901  0.4335 
 ## 
-## $Cstat
-##   Fisher.C df P.Value
-## 1    3.112  4   0.539
+## Global goodness-of-fit:
 ## 
-## $IC
-##      AIC   AICc    BIC  K  n
-## 1 23.112 29.631 42.232 10 50
+##   Fisher's C = 2.353 with P-value = 0.671 and on 4 degrees of freedom
 ## 
-## $coefficients
-##   Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate
-## 1       y1        x1   0.2005    0.1426 47     1.4062  0.1662       0.1985
-## 2       y1        y2   0.1626    0.1483 47     1.0959  0.2787       0.1547
-## 3       y2        x1   0.0656    0.1384 48     0.4743  0.6374       0.0683
-## 4       y3        y1  -0.2822    0.1434 48    -1.9677  0.0549      -0.2732
-##   
-## 1 
-## 2 
-## 3 
-## 4 
+## ---
+## Coefficients:
 ## 
-## $R2
-##   Response   family     link method R.squared
-## 1       y1 gaussian identity   none      0.07
-## 2       y2 gaussian identity   none      0.00
-## 3       y3 gaussian identity   none      0.07
+##   Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate 
+##         y1        x1  -0.0102    0.1373 47    -0.0745  0.9409      -0.0109 
+##         y1        y2  -0.0798    0.1400 47    -0.5697  0.5716      -0.0833 
+##         y2        x1  -0.1040    0.1407 48    -0.7389  0.4636      -0.1060 
+##         y3        y1  -0.0144    0.1527 48    -0.0943  0.9252      -0.0136 
 ## 
-## attr(,&quot;class&quot;)
-## [1] &quot;summary.psem&quot;</code></pre>
+##   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
+## 
+## Individual R-squared:
+## 
+##   Response method R.squared
+##         y1   none      0.01
+##         y2   none      0.01
+##         y3   none      0.00</code></pre>
 <p>The output should be familiar to anyone who has evaluated a linear model in R previously.</p>
 <p>It shows the call of the model (the component equations), the AIC and BIC scores (derived from that C statistic), and then the tests of directed separation. The last column of the table reports the P-values, which are summarized using the above equation to yield the global goodness-of-fit below. The next table reports the path coefficients, including the standardized values (scaled by standardized deviations). Finally, the individual R-squared values of each regression is given, to aid in evaluation of the model fit.</p>
 </div>
@@ -206,17 +206,17 @@ model &lt;-<span class="st"> </span><span class="kw">lm</span>(y <span class="op
 <p>While standardization is useful, it may be unnecessary or unwanted in certain circumstances. In these cases, one can specify <code>standardize = &quot;none&quot;</code> as an argument to <code>coefs</code>, which will return the raw (unstandardized) coefficients.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">coefs</span>(model, <span class="dt">standardize =</span> <span class="st">&quot;none&quot;</span>)</code></pre></div>
 <pre><code>##   Response Predictor Estimate Std.Error DF Crit.Value P.Value 
-## 1        y        x1  -0.0083    0.0999 98    -0.0832  0.9339</code></pre>
+## 1        y        x1  -0.0085    0.1047 98    -0.0815  0.9352</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># These coefficients are identical to those returned by summmary</span>
 <span class="kw">summary</span>(model)<span class="op">$</span>coefficients</code></pre></div>
 <pre><code>##                 Estimate Std. Error     t value     Pr(&gt;|t|)
-## (Intercept)  0.484401979 0.05599235  8.65121659 1.015139e-13
-## x1          -0.008310095 0.09992937 -0.08315969 9.338942e-01</code></pre>
+## (Intercept)  0.483801296 0.05989183  8.07791816 1.729667e-12
+## x1          -0.008533558 0.10473075 -0.08148092 9.352257e-01</code></pre>
 <p>To return the intercepts using <code>coefs</code>, specify the <code>intercepts = TRUE</code> argument:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">coefs</span>(model, <span class="dt">standardize =</span> <span class="st">&quot;none&quot;</span>, <span class="dt">intercepts =</span> <span class="ot">TRUE</span>)</code></pre></div>
 <pre><code>##   Response   Predictor Estimate Std.Error DF Crit.Value P.Value    
-## 1        y (Intercept)   0.4844    0.0560 98     8.6512  0.0000 ***
-## 2        y          x1  -0.0083    0.0999 98    -0.0832  0.9339</code></pre>
+## 1        y (Intercept)   0.4838    0.0599 98     8.0779  0.0000 ***
+## 2        y          x1  -0.0085    0.1047 98    -0.0815  0.9352</code></pre>
 </div>
 <div id="standardization-scaling-by-standard-deviations" class="section level4">
 <h4>2.2.2 Standardization: scaling by standard deviations</h4>
@@ -236,12 +236,12 @@ B.sdscaled &lt;-<span class="st"> </span>B <span class="op">*</span><span class=
 <p>The argument for standardization based on standard deviations is <code>standardize = &quot;scale&quot;</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">coefs</span>(model, <span class="dt">standardize =</span> <span class="st">&quot;scale&quot;</span>)</code></pre></div>
 <pre><code>##   Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate
-## 1        y        x1  -0.0083    0.0999 98    -0.0832  0.9339      -0.0084
+## 1        y        x1  -0.0085    0.1047 98    -0.0815  0.9352      -0.0082
 ##   
 ## 1</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Compare to hand-calculated value</span>
 B.sdscaled</code></pre></div>
-<pre><code>## [1] -0.008400101</code></pre>
+<pre><code>## [1] -0.008230538</code></pre>
 <p>Note that the <code>coefs</code> function will return both standardized and unstandardized coefficients when specifying any argument other than <code>standardize = &quot;none&quot;</code>.</p>
 </div>
 <div id="standardization-scaling-by-relevant-ranges" class="section level4">
@@ -259,12 +259,12 @@ B.range &lt;-<span class="st"> </span>B <span class="op">*</span><span class="st
 <p>The argument for standardization based on ranges is <code>standardize = &quot;range&quot;</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">coefs</span>(model, <span class="dt">standardize =</span> <span class="st">&quot;range&quot;</span>)</code></pre></div>
 <pre><code>##   Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate
-## 1        y        x1  -0.0083    0.0999 98    -0.0832  0.9339      -0.0083
+## 1        y        x1  -0.0085    0.1047 98    -0.0815  0.9352      -0.0085
 ##   
 ## 1</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Compare to hand-calculated value</span>
 B.range</code></pre></div>
-<pre><code>## [1] -0.008281843</code></pre>
+<pre><code>## [1] -0.008527749</code></pre>
 <p>If one does not wish to use the full range of the data, and instead restrict the range to a more ‘relevant’ subset of the data, this can be accomplished by providing a named <code>list</code> to the <code>standardize =</code> argument. The names should be <code>x</code> and <code>y</code> and each entry should be a <code>vector</code> of length 2 with the first entry being the minimum and the second entry being the maximum values of the relevant range.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Consider the range 0.1 - 0.8 for x</span>
 relrange.x &lt;-<span class="st"> </span><span class="fl">0.8</span><span class="op">-</span><span class="fl">0.1</span>
@@ -278,11 +278,11 @@ B.relrange &lt;-<span class="st"> </span>B <span class="op">*</span><span class=
 <span class="co"># Compare to automated calculation</span>
 <span class="kw">coefs</span>(model, <span class="dt">standardize =</span> <span class="kw">list</span>(<span class="dt">x1 =</span> <span class="kw">c</span>(<span class="fl">0.1</span>, <span class="fl">0.8</span>), <span class="dt">y =</span> <span class="kw">c</span>(<span class="fl">0.3</span>, <span class="fl">0.6</span>)))</code></pre></div>
 <pre><code>##   Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate
-## 1        y        x1  -0.0083    0.0999 98    -0.0832  0.9339      -0.0194
+## 1        y        x1  -0.0085    0.1047 98    -0.0815  0.9352      -0.0199
 ##   
 ## 1</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">B.relrange</code></pre></div>
-<pre><code>## [1] -0.01939022</code></pre>
+<pre><code>## [1] -0.01991164</code></pre>
 </div>
 <div id="standardization-for-binary-response-models" class="section level4">
 <h4>2.2.4 Standardization for Binary Response Models</h4>
@@ -313,11 +313,11 @@ sd.x &lt;-<span class="st"> </span><span class="kw">sd</span>(coefs.data<span cl
 <span class="co"># Compare to automated output</span>
 <span class="kw">coefs</span>(glm.model, <span class="dt">standardize.type =</span> <span class="st">&quot;latent.linear&quot;</span>)</code></pre></div>
 <pre><code>##   Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate
-## 1        y        x1  -0.0333    0.7033 98    -0.0473  0.9622      -0.0052
+## 1        y        x1  -0.0342    0.7233 98    -0.0473  0.9623      -0.0052
 ##   
 ## 1</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">Beta.glm <span class="op">*</span><span class="st"> </span>sd.x <span class="op">/</span><span class="st"> </span>sd.y.LT</code></pre></div>
-<pre><code>## [1] -0.005249939</code></pre>
+<pre><code>## [1] -0.005243558</code></pre>
 </div>
 </div>
 <div id="glms-in-psem" class="section level3">
@@ -339,14 +339,14 @@ glmdat &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span cl
 
 <span class="co"># Extract P-values</span>
 <span class="kw">summary</span>(<span class="kw">lm</span>(y1 <span class="op">~</span><span class="st"> </span>y2 <span class="op">+</span><span class="st"> </span>x1, glmdat))<span class="op">$</span>coefficients[<span class="dv">2</span>, <span class="dv">4</span>]</code></pre></div>
-<pre><code>## [1] 0.5297133</code></pre>
+<pre><code>## [1] 0.8075265</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(<span class="kw">lm</span>(y2 <span class="op">~</span><span class="st"> </span>y1 <span class="op">+</span><span class="st"> </span>x1, glmdat))<span class="op">$</span>coefficients[<span class="dv">2</span>, <span class="dv">4</span>]</code></pre></div>
-<pre><code>## [1] 0.5297133</code></pre>
+<pre><code>## [1] 0.8075265</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Repeat but model y1 and y2 and Poisson-distributed</span>
 <span class="kw">summary</span>(<span class="kw">glm</span>(y1 <span class="op">~</span><span class="st"> </span>y2 <span class="op">+</span><span class="st"> </span>x1, <span class="st">&quot;poisson&quot;</span>, glmdat))<span class="op">$</span>coefficients[<span class="dv">2</span>, <span class="dv">4</span>]</code></pre></div>
-<pre><code>## [1] 0.5348453</code></pre>
+<pre><code>## [1] 0.8080742</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(<span class="kw">glm</span>(y2 <span class="op">~</span><span class="st"> </span>y1 <span class="op">+</span><span class="st"> </span>x1, <span class="st">&quot;poisson&quot;</span>, glmdat))<span class="op">$</span>coefficients[<span class="dv">2</span>, <span class="dv">4</span>]</code></pre></div>
-<pre><code>## [1] 0.5421941</code></pre>
+<pre><code>## [1] 0.8173798</code></pre>
 <p>This effect is problematic because the d-sep tests are wholly dependent on the significance value. If the P-value is biased based on the direction of the test, then the goodness-of-fit of the model can be over- or underestimated.</p>
 <p><code>piecewiseSEM</code> version 2.0 solves this by providing three options to the user.</p>
 <ol style="list-style-type: decimal">
@@ -381,56 +381,62 @@ glmsem &lt;-<span class="st"> </span><span class="kw">psem</span>(
 <p>In option 1, the directionality can be specified using <code>direction = c()</code> as an additional argument.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(glmsem, <span class="dt">direction =</span> <span class="kw">c</span>(<span class="st">&quot;y1 &lt;- y2&quot;</span>), <span class="dt">.progressBar =</span> F)<span class="op">$</span>dTable</code></pre></div>
 <pre><code>##    Independ.Claim Estimate Std.Error DF Crit.Value P.Value 
-## 1 y3  ~  x1 + ...   0.0866    0.1350 46     0.6414  0.5244 
-## 2 y2  ~  y1 + ...  -0.0087    0.0062 47    -1.4142  0.1573</code></pre>
+## 1 y3  ~  x1 + ...  -0.2386    0.1513 46    -1.5773  0.1216 
+## 2 y2  ~  y1 + ...   0.0023    0.0066 47     0.3503  0.7261</code></pre>
 <p>In option 2, the SEM can be updated to remove that test by specifying it as a correlated error (see Section 2.4).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(<span class="kw">update</span>(glmsem, y1 <span class="op">%~~%</span><span class="st"> </span>y2), <span class="dt">.progressBar =</span> F)</code></pre></div>
-<pre><code>## $name
-## [1] &quot;update(glmsem, y1 %~~% y2)&quot;
+<pre><code>## 
+## Structural Equation Model of update(glmsem, y1 %~~% y2) 
 ## 
-## $call
-## [1] &quot;y1 ~ x1\n  y2 ~ x1\n  y3 ~ y1 + y2\n  y1 ~~ y2&quot;
+## Call:
+##   y1 ~ x1
+##   y2 ~ x1
+##   y3 ~ y1 + y2
+##   y1 ~~ y2
 ## 
-## $dTable
+##     AIC      BIC
+##  20.214   35.51
+## 
+## ---
+## Tests of directed separation:
+## 
 ##    Independ.Claim Estimate Std.Error DF Crit.Value P.Value 
-## 1 y3  ~  x1 + ...   0.0866     0.135 46     0.6414  0.5244 
+##   y3  ~  x1 + ...  -0.2386    0.1513 46    -1.5773  0.1216 
 ## 
-## $Cstat
-##   Fisher.C df P.Value
-## 1    1.291  2   0.524
+## Global goodness-of-fit:
 ## 
-## $IC
-##      AIC   AICc    BIC K  n
-## 1 17.291 21.087 32.587 8 50
+##   Fisher's C = 4.214 with P-value = 0.122 and on 2 degrees of freedom
 ## 
-## $coefficients
+## ---
+## Coefficients:
+## 
 ##   Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate
-## 1       y1        x1   0.0574    0.1542 48     0.3724  0.7096           NA
-## 2       y2        x1   0.0290    0.0661 48     0.4383  0.6612           NA
-## 3       y3        y1   0.0003    0.0127 47     0.0259  0.9794       0.0038
-## 4       y3        y2  -0.0067    0.0058 47    -1.1662  0.2494      -0.1710
-## 5     ~~y1      ~~y2  -0.1928        NA 47    -1.3473  0.9078      -0.1928
-##   
-## 1 
-## 2 
-## 3 
-## 4 
-## 5 
+##         y1        x1  -0.1815    0.1757 48    -1.0330  0.3016           NA
+##         y2        x1  -0.0270    0.0768 48    -0.3521  0.7247           NA
+##         y3        y1  -0.0325    0.0129 47    -2.5235  0.0151      -0.3453
+##         y3        y2   0.0027    0.0050 47     0.5381  0.5930       0.0736
+##       ~~y1      ~~y2   0.0383        NA 47     0.2628  0.3969       0.0383
+##    
+##    
+##    
+##   *
+##    
+##    
 ## 
-## $R2
-##   Response   family     link     method R.squared
-## 1       y1  poisson      log nagelkerke      0.00
-## 2       y2  poisson      log nagelkerke      0.01
-## 3       y3 gaussian identity       none      0.03
+##   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
 ## 
-## attr(,&quot;class&quot;)
-## [1] &quot;summary.psem&quot;</code></pre>
+## Individual R-squared:
+## 
+##   Response     method R.squared
+##         y1 nagelkerke      0.03
+##         y2 nagelkerke      0.00
+##         y3       none      0.12</code></pre>
 <p>Note that the claim no longer appears in the section for the tests of directed separation.</p>
 <p>Finally, option 3 can be invoked by specifying <code>conserve = T</code> as an additional argument</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(glmsem, <span class="dt">conserve =</span> T, <span class="dt">.progressBar =</span> F)<span class="op">$</span>dTable</code></pre></div>
 <pre><code>##    Independ.Claim Estimate Std.Error DF Crit.Value P.Value 
-## 1 y3  ~  x1 + ...   0.0866    0.1350 46     0.6414  0.5244 
-## 3 y1  ~  y2 + ...  -0.0096    0.0064 47    -1.4924  0.1356</code></pre>
+## 1 y3  ~  x1 + ...  -0.2386    0.1513 46    -1.5773  0.1216 
+## 2 y2  ~  y1 + ...   0.0023    0.0066 47     0.3503  0.7261</code></pre>
 <p>The user should be vigilant for these kinds of situations and ensure that both the specified paths AND the independence claims all make biological sense. In the case where the underlying assumptions of the d-sep tests can bias the goodness-of-fit statistic, <code>piecewiseSEM</code> should automatically alert the user.</p>
 </div>
 <div id="correlated-errors" class="section level3">
@@ -452,53 +458,53 @@ corsem &lt;-<span class="st"> </span><span class="kw">psem</span>(
 )
 
 <span class="kw">summary</span>(corsem, <span class="dt">.progressBar =</span> F)</code></pre></div>
-<pre><code>## $name
-## [1] &quot;corsem&quot;
+<pre><code>## 
+## Structural Equation Model of corsem 
 ## 
-## $call
-## [1] &quot;y1 ~ x1\n  y2 ~ x1\n  y1 ~~ y2\n  y3 ~ y1 + y2&quot;
+## Call:
+##   y1 ~ x1
+##   y2 ~ x1
+##   y1 ~~ y2
+##   y3 ~ y1 + y2
 ## 
-## $dTable
+##     AIC      BIC
+##  22.977   42.097
+## 
+## ---
+## Tests of directed separation:
+## 
 ##    Independ.Claim Estimate Std.Error DF Crit.Value P.Value 
-## 1 y3  ~  x1 + ...   0.2498    0.1619 46     1.5428  0.1297 
+##   y3  ~  x1 + ...   0.1846    0.1504 46     1.2278  0.2258 
 ## 
-## $Cstat
-##   Fisher.C df P.Value
-## 1    4.085  2    0.13
+## Global goodness-of-fit:
 ## 
-## $IC
-##      AIC   AICc    BIC  K  n
-## 1 24.085 30.878 43.205 10 50
+##   Fisher's C = 2.977 with P-value = 0.226 and on 2 degrees of freedom
 ## 
-## $coefficients
-##   Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate
-## 1       y1        x1  -0.1805    0.1381 48    -1.3076  0.1972      -0.1855
-## 2       y2        x1   0.0216    0.1547 48     0.1399  0.8893       0.0202
-## 3     ~~y1      ~~y2   0.1011        NA 47     0.6965  0.2448       0.1011
-## 4       y3        y1   0.1350    0.1665 47     0.8112  0.4214       0.1155
-## 5       y3        y2  -0.2294    0.1512 47    -1.5173  0.1359      -0.2161
-##   
-## 1 
-## 2 
-## 3 
-## 4 
-## 5 
+## ---
+## Coefficients:
 ## 
-## $R2
-##   Response   family     link method R.squared
-## 1       y1 gaussian identity   none      0.03
-## 2       y2 gaussian identity   none      0.00
-## 3       y3 gaussian identity   none      0.06
+##   Response Predictor Estimate Std.Error DF Crit.Value P.Value Std.Estimate 
+##         y1        x1   0.2245    0.1431 48     1.5695  0.1231       0.2209 
+##         y2        x1   0.0462    0.1722 48     0.2683  0.7896       0.0387 
+##       ~~y1      ~~y2  -0.0330        NA 47    -0.2267  0.5892      -0.0330 
+##         y3        y1   0.0349    0.1450 47     0.2410  0.8106       0.0343 
+##         y3        y2   0.1859    0.1234 47     1.5071  0.1385       0.2147 
 ## 
-## attr(,&quot;class&quot;)
-## [1] &quot;summary.psem&quot;</code></pre>
+##   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
+## 
+## Individual R-squared:
+## 
+##   Response method R.squared
+##         y1   none      0.05
+##         y2   none      0.00
+##         y3   none      0.05</code></pre>
 <p>In the case where the correlated error occurs between two exogenous variables, it is simply the raw bivariate correlation whose P-value is determined using modifications to the function <code>cor.test</code>. In the event the correlated error includes an endogenous variable, it is the partial correlation that removes the effect of any covariates.</p>
 <p>In the above example, the correlated error removes the influence of <code>x1</code> on both <code>y1</code> and <code>y2</code> before computing their correlation.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">cor</span>(<span class="kw">resid</span>(<span class="kw">lm</span>(y1 <span class="op">~</span><span class="st"> </span>x1, cordat)), <span class="kw">resid</span>(<span class="kw">lm</span>(y2 <span class="op">~</span><span class="st"> </span>x1, cordat)))</code></pre></div>
-<pre><code>## [1] 0.1010805</code></pre>
+<pre><code>## [1] -0.0330485</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">cerror</span>(y1 <span class="op">%~~%</span><span class="st"> </span>y2, corsem)</code></pre></div>
 <pre><code>##   Response Predictor Estimate Std.Error DF Crit.Value P.Value
-## 1     ~~y1      ~~y2   0.1011        NA 47     0.6965  0.2448</code></pre>
+## 1     ~~y1      ~~y2   -0.033        NA 47    -0.2267  0.5892</code></pre>
 </div>
 <div id="nested-models-and-aic" class="section level3">
 <h3>2.5 Nested models and AIC</h3>
@@ -533,8 +539,8 @@ sem2 &lt;-<span class="st"> </span><span class="kw">psem</span>(
 
 <span class="kw">AIC</span>(sem1, sem2new)</code></pre></div>
 <pre><code>##   df    AIC
-## x  9 23.233
-## y  6 17.158</code></pre>
+## x  9 28.056
+## y  6 16.582</code></pre>
 <p>Now the comparison is fair and the model selection procedure is robust. In this case, the models have equivalent support (i.e., <span class="math inline">\(\delta\)</span>AIC &lt; 2).</p>
 <p>Comparison of saturated models–ones that have <em>no</em> missing paths–and unsaturated ones using AIC is currently not possible, although we are looking into possible likelihood formulations in the absence of a C statistic.</p>
 </div>
@@ -632,50 +638,62 @@ shipley.list &lt;-<span class="st"> </span><span class="kw">list</span>(
 <span class="co">#   )</span></code></pre></div>
 <p>Now we extract a summary of the object.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(new.summary &lt;-<span class="st"> </span><span class="kw">summary</span>(shipley.psem, <span class="dt">.progressBar =</span> F))</code></pre></div>
-<pre><code>## $name
-## [1] &quot;shipley.psem&quot;
+<pre><code>## 
+## Structural Equation Model of shipley.psem 
 ## 
-## $call
-## [1] &quot;DD ~ lat\n  Date ~ DD\n  Growth ~ Date\n  Live ~ Growth&quot;
+## Call:
+##   DD ~ lat
+##   Date ~ DD
+##   Growth ~ Date
+##   Live ~ Growth
 ## 
-## $dTable
+##     AIC      BIC
+##  49.538   149.594
+## 
+## ---
+## Tests of directed separation:
+## 
 ##         Independ.Claim Estimate Std.Error   DF Crit.Value P.Value 
-## 1   Date  ~  lat + ...  -0.0091    0.1135   18    -0.0798  0.9373 
-## 2 Growth  ~  lat + ...  -0.0989    0.1107   18    -0.8929  0.3837 
-## 3   Live  ~  lat + ...   0.0305    0.0297   NA     1.0280  0.3039 
-## 4  Growth  ~  DD + ...  -0.0106    0.0358 1329    -0.2967  0.7667 
-## 5    Live  ~  DD + ...   0.0272    0.0271   NA     1.0038  0.3155 
-## 6  Live  ~  Date + ...  -0.0466    0.0298   NA    -1.5626  0.1181 
+##     Date  ~  lat + ...  -0.0091    0.1135   18    -0.0798  0.9373 
+##   Growth  ~  lat + ...  -0.0989    0.1107   18    -0.8929  0.3837 
+##     Live  ~  lat + ...   0.0305    0.0297   NA     1.0280  0.3039 
+##    Growth  ~  DD + ...  -0.0106    0.0358 1329    -0.2967  0.7667 
+##      Live  ~  DD + ...   0.0272    0.0271   NA     1.0038  0.3155 
+##    Live  ~  Date + ...  -0.0466    0.0298   NA    -1.5626  0.1181 
 ## 
-## $Cstat
-##   Fisher.C df P.Value
-## 1   11.538 12   0.483
+## Global goodness-of-fit:
 ## 
-## $IC
-##      AIC  AICc     BIC  K    n
-## 1 49.538 50.24 149.594 19 1431
+##   Fisher's C = 11.538 with P-value = 0.483 and on 12 degrees of freedom
 ## 
-## $coefficients
-##   Response Predictor Estimate Std.Error   DF Crit.Value P.Value
-## 1       DD       lat  -0.8355    0.1194   18    -6.9960       0
-## 2     Date        DD  -0.4976    0.0049 1330  -100.8757       0
-## 3   Growth      Date   0.3007    0.0266 1330    11.2917       0
-## 4     Live    Growth   0.3479    0.0584 1431     5.9552       0
+## ---
+## Coefficients:
+## 
+##   Response   Predictor Estimate Std.Error   DF Crit.Value P.Value
+##         DD (Intercept) 196.6524    7.6605 1331    25.6708  0.0000
+##         DD         lat  -0.8355    0.1194   18    -6.9960  0.0000
+##       Date (Intercept) 198.3382    1.1842 1330   167.4825  0.0000
+##       Date          DD  -0.4976    0.0049 1330  -100.8757  0.0000
+##     Growth (Intercept)  10.7892    3.5189 1330     3.0661  0.0022
+##     Growth        Date   0.3007    0.0266 1330    11.2917  0.0000
+##       Live      Growth   0.3479    0.0584 1431     5.9552  0.0000
 ##   Std.Estimate    
-## 1      -0.6877 ***
-## 2      -0.6281 ***
-## 3       0.3824 ***
-## 4           NA ***
+##       161.8746 ***
+##        -0.6877 ***
+##       250.3448 ***
+##        -0.6281 ***
+##        13.7208  **
+##         0.3824 ***
+##             NA ***
 ## 
-## $R2
-##   Response   family     link method Marginal Conditional
-## 1       DD gaussian identity   none     0.49        0.70
-## 2     Date gaussian identity   none     0.41        0.98
-## 3   Growth gaussian identity   none     0.11        0.84
-## 4     Live binomial    logit  delta     0.16        0.18
+##   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
 ## 
-## attr(,&quot;class&quot;)
-## [1] &quot;summary.psem&quot;</code></pre>
+## Individual R-squared:
+## 
+##   Response method Marginal Conditional
+##         DD   none     0.49        0.70
+##       Date   none     0.41        0.98
+##     Growth   none     0.11        0.84
+##       Live  delta     0.16        0.18</code></pre>
 <p>The output will look familiar to anyone who has run a regression in R.</p>
 <p>First, we have the call, which represents the structural questions.</p>
 <p>Next are the AIC and new BIC values, formerly accessible using <code>sem.aic</code>. The two produce identical values.</p>
@@ -749,28 +767,40 @@ new.summary<span class="op">$</span>Cstat</code></pre></div>
 ## 4     Live    Growth  2.2268620 0.373938899       0 ***</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Extract from new summary object</span>
 new.summary<span class="op">$</span>coefficients</code></pre></div>
-<pre><code>##   Response Predictor Estimate Std.Error   DF Crit.Value P.Value
-## 1       DD       lat  -0.8355    0.1194   18    -6.9960       0
-## 2     Date        DD  -0.4976    0.0049 1330  -100.8757       0
-## 3   Growth      Date   0.3007    0.0266 1330    11.2917       0
-## 4     Live    Growth   0.3479    0.0584 1431     5.9552       0
+<pre><code>##   Response   Predictor Estimate Std.Error   DF Crit.Value P.Value
+## 1       DD (Intercept) 196.6524    7.6605 1331    25.6708  0.0000
+## 2       DD         lat  -0.8355    0.1194   18    -6.9960  0.0000
+## 3     Date (Intercept) 198.3382    1.1842 1330   167.4825  0.0000
+## 4     Date          DD  -0.4976    0.0049 1330  -100.8757  0.0000
+## 5   Growth (Intercept)  10.7892    3.5189 1330     3.0661  0.0022
+## 6   Growth        Date   0.3007    0.0266 1330    11.2917  0.0000
+## 7     Live      Growth   0.3479    0.0584 1431     5.9552  0.0000
 ##   Std.Estimate    
-## 1      -0.6877 ***
-## 2      -0.6281 ***
-## 3       0.3824 ***
-## 4           NA ***</code></pre>
+## 1     161.8746 ***
+## 2      -0.6877 ***
+## 3     250.3448 ***
+## 4      -0.6281 ***
+## 5      13.7208  **
+## 6       0.3824 ***
+## 7           NA ***</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># The new coefs() function is much faster too</span>
 <span class="kw">coefs</span>(shipley.psem)</code></pre></div>
-<pre><code>##   Response Predictor Estimate Std.Error   DF Crit.Value P.Value
-## 1       DD       lat  -0.8355    0.1194   18    -6.9960       0
-## 2     Date        DD  -0.4976    0.0049 1330  -100.8757       0
-## 3   Growth      Date   0.3007    0.0266 1330    11.2917       0
-## 4     Live    Growth   0.3479    0.0584 1431     5.9552       0
+<pre><code>##   Response   Predictor Estimate Std.Error   DF Crit.Value P.Value
+## 1       DD (Intercept) 196.6524    7.6605 1331    25.6708  0.0000
+## 2       DD         lat  -0.8355    0.1194   18    -6.9960  0.0000
+## 3     Date (Intercept) 198.3382    1.1842 1330   167.4825  0.0000
+## 4     Date          DD  -0.4976    0.0049 1330  -100.8757  0.0000
+## 5   Growth (Intercept)  10.7892    3.5189 1330     3.0661  0.0022
+## 6   Growth        Date   0.3007    0.0266 1330    11.2917  0.0000
+## 7     Live      Growth   0.3479    0.0584 1431     5.9552  0.0000
 ##   Std.Estimate    
-## 1      -0.6877 ***
-## 2      -0.6281 ***
-## 3       0.3824 ***
-## 4           NA ***</code></pre>
+## 1     161.8746 ***
+## 2      -0.6877 ***
+## 3     250.3448 ***
+## 4      -0.6281 ***
+## 5      13.7208  **
+## 6       0.3824 ***
+## 7           NA ***</code></pre>
 <p>Note two items: <em>the standardized estimates and their standard errors are now reported by default at the end of the coefficients table (column <code>Std.Estimate</code>). </em>the standardized estimate for the logistic regression is different, based on new calculations (see Section 2.2)</p>
 <p>For the moment, version 2.0 only reports the scaled estimates (based on the standard deviations of the response and predictor). Future versions will include a range standardization.</p>
 <p>Finally, <code>summary</code> reports the individual model R<sup>2</sup> values. These were formerly obtained using <code>sem.model.fits</code> which was confusing. I have not included the old calculations in the package as the new <code>rsquared</code> function includes new calculations. However, this information is useful and therefore is now reported alongside the d-sep tests, Fisher’s C, and path coefficients.</p>

@@ -106,7 +106,7 @@ GetData <- function(modelList) {
   
   modelList <- removeData(modelList, formulas = 1)
   
-  data.list <- lapply(modelList, getSingleData)
+  data.list <- lapply(modelList, GetSingleData)
   
   if(all(sapply(data.list, class) == "comparative.data"))
     
@@ -122,7 +122,7 @@ GetData <- function(modelList) {
         
         data.list <- Map(function(x, i) setNames(x, ifelse(names(x) %in% match.by, names(x), sprintf('%s.%d', names(x), i))), data.list, seq_along(data.list))
         
-        data <- Reduce(function(...) merge(..., all=T), data.list)
+        data <- Reduce(function(...) merge(..., all = TRUE), data.list)
         
       } else data <- data.list[[1]]
       
@@ -144,7 +144,7 @@ GetData <- function(modelList) {
 #' 
 #' @keywords internal
 #' 
-getSingleData <- function(model) {
+GetSingleData <- function(model) {
 
   dat <- data.frame()
 
@@ -189,6 +189,10 @@ getSingleData <- function(model) {
            dat <- model@frame
          },
 
+         "lmerModLmerTest" = {
+           dat <- model@frame
+         },
+         
          "merModLmerTest" = {
            dat <- model@frame
          },
@@ -223,12 +227,11 @@ GetOLRE <- function(sigma, model, X, data, RE = c("all", "RE", "OLRE")) {
     
     rand <- sapply(lme4::findbars(formula(model)), function(x) as.character(x)[3])
     
-    rand <- rand[!duplicated(rand)] } else
-      
-      if(class(model) %in% c("lme", "glmmPQL")) {
-        
-        
-      }
+    rand <- rand[!duplicated(rand)] 
+    
+  } 
+  
+  # else if(class(model) %in% c("lme", "glmmPQL")) { }
   
   idx <- sapply(sapply(strsplit(rand, "\\:"), function(x) gsub("\\(|\\)", "", x)), function(x) {
     
@@ -248,25 +251,27 @@ GetOLRE <- function(sigma, model, X, data, RE = c("all", "RE", "OLRE")) {
       
       sum(rowSums(Z %*% i) * Z) / nrow(X)
       
-    } ) else if(RE == "OLRE") 
+    } ) else if(RE == "OLRE") {
       
-      sapply(sigma[idx], function(i) {
+      if(all(idx == FALSE)) 0 else {
         
-        Z <- as.matrix(X[, rownames(i), drop = FALSE])
-        
-        sum(rowSums(Z %*% i) * Z) / nrow(X)
-        
-      } ) else if(RE == "all")
-        
-        sapply(sigma, function(i) {
+        sapply(sigma[idx], function(i) {
           
           Z <- as.matrix(X[, rownames(i), drop = FALSE])
           
           sum(rowSums(Z %*% i) * Z) / nrow(X)
           
-        } )
-  
-}
+          } ) } } else if(RE == "all")
+            
+            sapply(sigma, function(i) {
+              
+              Z <- as.matrix(X[, rownames(i), drop = FALSE])
+          
+              sum(rowSums(Z %*% i) * Z) / nrow(X)
+              
+            } )
+      
+      }
 
 #' Get random effects variance-covariance from lme
 #' 
@@ -314,19 +319,21 @@ isSig <- function(p) {
 #' 
 KRp <- function(model, vars, data, intercepts = FALSE) {
 
-  if(grepl("\\*", deparse(formula(model))) & !all(grepl("\\*", vars))) {
+  # if(any(grepl("\\*", all.vars_notrans(formula(model)))) & !all(grepl("\\*", vars))) {
 
     f <- all.vars_trans(formula(model))
 
     model <- update(model, as.formula(paste(f[1], " ~ ", paste(f[-1], collapse = " + "), " + ", paste(onlyBars(formula(model)), collapse = " + "))))
 
-  }
+  # }
 
   ret <- sapply(vars, function(x) {
 
-    reducMod <- update(model, as.formula(paste(". ~ . -", x)), data = data)
+    reduceMod <- update(model, as.formula(paste(". ~ . -", x)))
 
-    kr <- suppressWarnings(pbkrtest::KRmodcomp(model, reducMod))
+    if(nobs(model) != nobs(reduceMod)) stop("Different sample sizes for `KRmodcomp`. Remove all NAs and re-run")
+    
+    kr <- suppressWarnings(pbkrtest::KRmodcomp(model, reduceMod))
 
     d <- round(kr$stats$ddf, 2)
 

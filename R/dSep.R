@@ -48,7 +48,7 @@ dSep <- function(modelList, direction = NULL, conserve = FALSE, conditioning = F
 
   if(length(b) == 0) {
 
-    warning("No independence claims present. Tests of directed separation not possible.", call. = FALSE)
+    # warning("No independence claims present. Tests of directed separation not possible.", call. = FALSE)
 
     data.frame()
 
@@ -68,7 +68,7 @@ dSep <- function(modelList, direction = NULL, conserve = FALSE, conditioning = F
 
       bMod <- modelList[[which(sapply(formulaList, function(x) x[1] == b[[i]][2]))]]
 
-      if(any(class(bMod) %in% c("lmerMod", "merModLmerTest", "glmerMod"))) {
+      if(any(class(bMod) %in% c("lmerMod", "merModLmerTest", "lmerModLmerTest", "glmerMod"))) {
 
         bNewMod <- suppressWarnings(
           update(bMod,
@@ -84,7 +84,7 @@ dSep <- function(modelList, direction = NULL, conserve = FALSE, conditioning = F
                  data = data)
           )
 
-      if(any(class(bNewMod) %in% c("lmerMod", "merModLmerTest"))) {
+      if(any(class(bNewMod) %in% c("lmerMod", "merModLmerTest", "lmerModLmerTest"))) {
 
         kr <- KRp(bNewMod, b[[i]][1], data, intercepts = FALSE)
 

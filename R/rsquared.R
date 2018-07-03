@@ -1,7 +1,7 @@
 #' R-squared for linear regression
 #'
-#' Returns (pseudo)-R^2 values for all linear, general(ized) linear, and
-#' general(ized) linear mixed effects models.
+#' Returns (pseudo)-R^2 values for all linear, generalized linear, and
+#' generalized linear mixed effects models.
 #'
 #' For mixed models, marginal R2 considers only the variance by the fixed
 #' effects, and the conditional R2 by both the fixed and random effects.
@@ -11,7 +11,7 @@
 #'
 #' \item\code{coxsnell} McFadden's R2 but raised to 2/N. Upper limit is < 1
 #'
-#' \item\code{nagelkerke} Adjust's Cox-Snell R2 so that upper limit = 1. The
+#' \item\code{nagelkerke} Adjusts Cox-Snell R2 so that upper limit = 1. The
 #' DEFAULT method
 #'
 #' } For GLMERs fit to Poisson, Gamma, and negative binomial distributions
@@ -107,7 +107,7 @@ rsquared <- function(modelList, method = NULL) {
 
     if(all(class(i) %in% c("lme"))) r <- rsquared.lme(i)
 
-    if(all(class(i) %in% c("lmerMod", "merModLmerTest"))) r <- rsquared.merMod(i)
+    if(all(class(i) %in% c("lmerMod", "merModLmerTest", "lmerModLmerTest"))) r <- rsquared.merMod(i)
 
     if(any(class(i) %in% c("glmerMod"))) r <- rsquared.glmerMod(i, method)
 
@@ -410,6 +410,12 @@ rsquared.glmerMod <- function(model, method = "trigamma") {
               } else
 
                 if(link == "inverse") {
+                  
+                  if(method != "delta") method <- "delta"
+                  
+                  nu <- omega / lambda
+                  
+                  sigmaD <- 1/(nu * lambda^2)
 
                   } else stop("Unsupported link function!")
 
