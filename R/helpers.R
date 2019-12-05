@@ -78,6 +78,124 @@ all.vars_trans <- function(formula.) {
 
 }
 
+
+#' Captures output table
+#' 
+#' @keywords internal
+#' 
+captureTable <- function(g, row.names = FALSE) {
+  
+  g1 <- capture.output(print(g, row.names = row.names))
+  
+  if(all(g1 == "data frame with 0 columns and 0 rows")) 
+    
+    g1 <- "No independence claims present. Tests of directed separation not possible."
+  
+  g1 <- paste0(g1, "\n")
+  
+  return(g1)
+  
+}
+
+#' Bind data.frames of differing dimensions
+#'
+#' From: https://stackoverflow.com/a/31678079
+#' 
+#' @param ... data.frames to be bound, separated by commas
+#' 
+#'  @keywords internal
+#'   
+cbind_fill <- function(...) {
+  
+  nm <- list(...) 
+  
+  dfdetect <- grepl("data.frame|matrix", unlist(lapply(nm, function(cl) paste(class(cl), collapse = " ") )))
+  
+  vec <- data.frame(nm[!dfdetect])
+  
+  n <- max(sapply(nm[dfdetect], nrow)) 
+  
+  vec <- data.frame(lapply(vec, function(x) rep(x, n)))
+  
+  if (nrow(vec) > 0) nm <- c(nm[dfdetect], list(vec))
+  
+  nm <- lapply(nm, as.data.frame)
+  
+  do.call(cbind, lapply(nm, function (df1) 
+    
+    rbind(df1, as.data.frame(matrix(NA, ncol = ncol(df1), nrow = n-nrow(df1), dimnames = list(NULL, names(df1))))) )) 
+
+  }
+
+#' Transform variables based on model formula and store in new data frame
+#' 
+#' @keywords internal
+#' 
+dataTrans <- function(formula., data) {
+  
+  notrans <- all.vars.merMod(formula.)
+  
+  if(class(formula.) == "formula.cerror") notrans <- gsub(".*\\((.*)\\)", "\\1", notrans)
+  
+  trans <- all.vars_trans(formula.)
+  
+  trans <- unlist(strsplit(trans, "\\:"))
+  
+  trans <- trans[!duplicated(trans)]
+  
+  if(any(grepl("scale\\(.*\\)", trans))) {
+    
+    trans[which(grepl("scale(.*)", trans))] <- notrans[which(grepl("scale(.*)", trans))]
+    
+    warning("`scale` applied directly to variable. Use argument `standardize = TRUE` instead.", call. = FALSE)
+    
+  }
+  
+  if(any(!notrans %in% trans)) {
+    
+    for(k in 1:length(notrans)) {
+      
+      if(is.factor(data[, notrans[k]])) next else {
+        
+        data[, notrans[k]] <-
+          
+          sapply(data[, notrans[k]], function(x) eval(parse(text = gsub(notrans[k], x, trans[k]))))
+        
+      }
+      
+    }
+    
+  }
+  
+  colnames(data) <- notrans
+  
+  return(data)
+  
+}
+
+#' Get ANOVA results
+#'
+#' @keywords internal
+#'
+getAnova <- function(model, test.statistic = "F", test.type = "III") {
+
+  ct <- summary(model)$coefficients
+
+  krp <- as.data.frame(car::Anova(model, test.statistic = test.statistic, type = test.type))
+
+  ret <- cbind.data.frame(
+    ct[, 1:2], 
+    DF = krp[, 3], 
+    Crit.Value = krp[, 1], 
+    P = krp[, ncol(krp)]
+  )
+
+  names(ret)[ncol(ret)] <- "Pr(>|t|)"
+
+  return(ret)
+
+}
+
 #' Get random effects from lme
 #' 
 #' @keywords internal
@@ -108,31 +226,21 @@ GetData <- function(modelList) {
   
   data.list <- lapply(modelList, GetSingleData)
   
+  data.list <- data.list[!sapply(data.list, is.null)]
+  
+  data.list <- unname(data.list)
+  
   if(all(sapply(data.list, class) == "comparative.data"))
     
-    data <- data.list[[1]] else {
+    data <- data.list[[1]] else 
       
-      data.list <- data.list[order(sapply(data.list, nrow))]
+      data <- do.call(cbind_fill, data.list)
+  
+  data <- data[, !duplicated(colnames(data), fromLast = TRUE)]
       
-      if(length(data.list) > 1) {
-        
-        match.by <- unlist(sapply(data.list, names))
-        
-        match.by <- match.by[!duplicated(match.by)]
-        
-        data.list <- Map(function(x, i) setNames(x, ifelse(names(x) %in% match.by, names(x), sprintf('%s.%d', names(x), i))), data.list, seq_along(data.list))
-        
-        data <- Reduce(function(...) merge(..., all = TRUE), data.list)
-        
-      } else data <- data.list[[1]]
-      
-      data <- data[, !duplicated(colnames(data), fromLast = TRUE)]
-      
-      colnames(data) <- gsub(".*\\((.*)\\).*", "\\1", colnames(data))
-      
-      data <- as.data.frame(data)
-      
-    }
+  # colnames(data) <- gsub(".*\\((.*)\\).*", "\\1", colnames(data))
+
+  data <- as.data.frame(data)
   
   rownames(data) <- 1:nrow(data)
   
@@ -239,13 +347,13 @@ GetOLRE <- function(sigma, model, X, data, RE = c("all", "RE", "OLRE")) {
     
   } )
   
-  sigma.names <- unlist(strsplit(names(sigma), "\\."))
+  sigma.names <- unlist(names(sigma)) # unlist(strsplit(names(sigma), "\\."))
   
   idx. <- sapply(sigma.names, function(x) !any(x %in% rand[idx]))
   
   if(RE == "RE") 
     
-    sapply(sigma[idx.], function(i) {
+    out <- sapply(sigma[idx.], function(i) {
       
       Z <- as.matrix(X[, rownames(i), drop = FALSE])
       
@@ -253,25 +361,29 @@ GetOLRE <- function(sigma, model, X, data, RE = c("all", "RE", "OLRE")) {
       
     } ) else if(RE == "OLRE") {
       
-      if(all(idx == FALSE)) 0 else {
+      if(all(idx == FALSE)) out <- 0 else {
         
-        sapply(sigma[idx], function(i) {
+        out <- sapply(sigma[idx], function(i) {
           
           Z <- as.matrix(X[, rownames(i), drop = FALSE])
           
           sum(rowSums(Z %*% i) * Z) / nrow(X)
           
-          } ) } } else if(RE == "all")
-            
-            sapply(sigma, function(i) {
-              
-              Z <- as.matrix(X[, rownames(i), drop = FALSE])
+        } ) } } else if(RE == "all")
           
-              sum(rowSums(Z %*% i) * Z) / nrow(X)
-              
-            } )
-      
-      }
+          out <- sapply(sigma, function(i) {
+            
+            Z <- as.matrix(X[, rownames(i), drop = FALSE])
+            
+            sum(rowSums(Z %*% i) * Z) / nrow(X)
+            
+          } )
+  
+  if(length(out) == 0) out <- 0
+  
+  return(out)
+  
+}
 
 #' Get random effects variance-covariance from lme
 #' 
@@ -283,7 +395,7 @@ GetVarCov <- function(model) {
 
   if(any(class(vc) == "try-error")) {
 
-    vc <- VarCorr(model)
+    vc <- nlme::VarCorr(model)
 
     v <- suppressWarnings(as.numeric(vc[, 1]))
 
@@ -317,53 +429,65 @@ isSig <- function(p) {
 #' 
 #' @keywords internal
 #' 
-KRp <- function(model, vars, data, intercepts = FALSE) {
+# KRp <- function(model, vars, data, intercepts = FALSE) {
+# 
+#   # if(any(grepl("\\*", all.vars_notrans(formula(model)))) & !all(grepl("\\*", vars))) {
+# 
+#     f <- all.vars_trans(formula(model))
+# 
+#     model <- update(model, as.formula(paste(f[1], " ~ ", paste(f[-1], collapse = " + "), " + ", paste(onlyBars(formula(model)), collapse = " + "))))
+# 
+#   # }
+# 
+#   out <- data.frame()
+#   
+#   for(x in vars) { #sapply(vars, function(x) {
+# 
+#     reduceModel <- update(model, as.formula(paste(". ~ . -", x)))
+# 
+#     if(nobs(model) != nobs(reduceModel)) stop("Different sample sizes for `KRmodcomp`. Remove all NAs and re-run")
+#     
+#     kr <- try(pbkrtest::KRmodcomp(model, reduceModel), silent = TRUE)
+# 
+#     if(class(kr) == "try-error") 
+#       
+#       stop("Cannot obtain P-values from `lmerMod` using `pbkrtest::KRmodcopm`. Consider fitting using `nlme::lme`") else {
+#         
+#         d <- round(kr$stats$ddf, 2)
+#   
+#         p <- kr$stats$p.valueU
+#   
+#         out <- rbind(out, data.frame(d, p))
+#         
+#       }
+# 
+#   } # )
+# 
+#   if(intercepts == TRUE) {
+# 
+#     reduceModelI <- update(model, as.formula(paste("~ . - 1")), data = data)
+# 
+#     krI <- try(pbkrtest::KRmodcomp(model, reduceModelI), silent = TRUE)
+#     
+#     if(class(krI) == "try-error") 
+#       
+#       stop("Cannot obtain P-values from `lmerMod` using `pbkrtest::KRmodcomp`. Consider re-fitting using `nlme::lme`")else {
+#         
+#         dI <- krI$stats$ddf
+#     
+#         pI <- krI$stats$p.valueU
+#     
+#         out <- rbind(data.frame(d = dI, p = pI), out)
+#         
+#       }
+#       
+#   }
+#   
+#   return(out)
+# 
+# }
 
-  # if(any(grepl("\\*", all.vars_notrans(formula(model)))) & !all(grepl("\\*", vars))) {
-
-    f <- all.vars_trans(formula(model))
-
-    model <- update(model, as.formula(paste(f[1], " ~ ", paste(f[-1], collapse = " + "), " + ", paste(onlyBars(formula(model)), collapse = " + "))))
-
-  # }
-
-  ret <- sapply(vars, function(x) {
-
-    reduceMod <- update(model, as.formula(paste(". ~ . -", x)))
-
-    if(nobs(model) != nobs(reduceMod)) stop("Different sample sizes for `KRmodcomp`. Remove all NAs and re-run")
-    
-    kr <- suppressWarnings(pbkrtest::KRmodcomp(model, reduceMod))
-
-    d <- round(kr$stats$ddf, 2)
-
-    p <- kr$stats$p.valueU
-
-    c(d, p)
-
-  } )
-
-  if(intercepts == TRUE) {
-
-    reducMod <- update(model, as.formula(paste("~ 0 + .")), data = data)
-
-    kr <- suppressWarnings(pbkrtest::KRmodcomp(model, reducMod))
-
-    d <- kr$stats$ddf
-
-    p <- kr$stats$p.valueU
-
-    cbind(`(Intercept)` = c(d, p), ret)
-
-    # cbind(`(Intercept)` = c(NA, NA), ret)
-
-  } else ret
-
-}
-
-#' Get list of formula from a `sem` object
-#' 
-#' If remove = TRUE, take out non-evaluated formula
+#' Get list of formula from a `psem` object
 #' 
 #' @keywords internal
 #' 
@@ -429,17 +553,17 @@ print.attr <- function(x, ...) {
 #' @keywords internal
 #' 
 removeData <- function(modelList, formulas = 0) {
-
+  
   remove <- c("character", "matrix", "data.frame", "SpatialPointsDataFrame", "comparative.data")
-
+  
   if(formulas == 1) remove <- c(remove, "formula", "formula.cerror")
-
+  
   if(formulas == 2) remove <- c(remove, "formula")
-
+  
   if(formulas == 3) remove <- c(remove, "formula.cerror")
-
+  
   modelList[!sapply(modelList, function(x) any(class(x) %in% remove))]
-
+  
 }
 
 #' Strip transformations
@@ -452,4 +576,16 @@ stripTransformations <- function(x) {
 
   gsub(" ", "", gsub("(.*)\\+.*", "\\1", x))
 
+}
+
+#' Get Response Name as a Character
+#' 
+#' @keywords internal
+#' 
+get_response <- function(mod){
+  mod <- removeData(mod)
+  f <- lapply(mod, formula)
+  r <- lapply(f, function(x) x[[2]])
+  
+  return(as.character(r))
 }

@@ -5,7 +5,12 @@
 \alias{`~~`}
 \title{Correlated error operator}
 \usage{
-e1 %~~% e2
+e1 \%~~\% e2
+}
+\arguments{
+\item{e1}{one variable to be correlated}
+
+\item{e2}{the other variable to be correlated}
 }
 \description{
 Specifies correlated errors among predictors
@@ -51,5 +56,5 @@ coefs(sem)
 \code{\link{cerror}}
 }
 \author{
-Jon Lefcheck <jlefcheck@bigelow.org>
+Jon Lefcheck <lefcheckj@si.edu>
 }

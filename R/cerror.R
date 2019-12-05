@@ -4,10 +4,15 @@
 #'
 #' For use in \code{psem} to identify correlated sets of variables.
 #' 
-#' @usage e1 %~~% e2
-#' @author Jon Lefcheck <jlefcheck@@bigelow.org>
+#' @param e1 one variable to be correlated
+#' @param e2 the other variable to be correlated
+#' 
+#' @author Jon Lefcheck <lefcheckj@@si.edu>
+#' 
 #' @aliases `~~`
+#' 
 #' @seealso \code{\link{cerror}}
+#' 
 #' @examples
 #'
 #' # Generate example data
@@ -44,15 +49,15 @@
 #' @export
 #' 
 `%~~%` <- function(e1, e2) {
-
+  
   x <- paste(deparse(substitute(e1)), "~~", deparse(substitute(e2)))
-
+  
   # x <- call(x)
-
+  
   class(x) <- "formula.cerror"
-
+  
   return(x)
-
+  
 }
 
 #' Correlated errors
@@ -77,7 +82,7 @@
 #' 
 #' @return Returns a \code{data.frame} containing the (partial) correlation and
 #' associated significance test.
-#' @author Jon Lefcheck <jlefcheck@@bigelow.org>
+#' @author Jon Lefcheck <lefcheckj@@si.edu>
 #' @seealso \code{\link{\%~~\%}}
 #' 
 #' @examples
@@ -115,11 +120,15 @@
 #' @export 
 #' 
 cerror <- function(formula., modelList, data = NULL) {
-
-  tab <- partialCorr(formula., modelList, data)
-
-  tab[, which(sapply(tab, is.numeric))] <- round(tab[, which(sapply(tab, is.numeric))], 4)
-
-  return(tab)
-
+  
+  ret <- partialCorr(formula., modelList, data)
+  
+  # ret[, which(sapply(ret, is.numeric))] <- round(ret[, which(sapply(ret, is.numeric))], 4)
+  
+  ret <- cbind.data.frame(ret, isSig(ret$P.Value))
+  
+  names(ret)[ncol(ret)] <- ""
+  
+  return(ret)
+  
 }

@@ -5,17 +5,13 @@
 \title{Replace transformations in the basis set by cycling through neighbors and applying
 transformations in order of how variables are treated in the child nearest to current node}
 \usage{
-reverseAddVars(modelList, b, amat)
+reverseAddVars(b, modelList, amat)
 }
 \description{
 Replace transformations in the basis set by cycling through neighbors and applying
 transformations in order of how variables are treated in the child nearest to current node
 }
-\keyword{(e.g.,}
-\keyword{1)}
 \keyword{Reverse}
 \keyword{added}
 \keyword{internal}
 \keyword{variables}
-\keyword{y}
-\keyword{~}

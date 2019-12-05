@@ -2,11 +2,19 @@
 % Please edit documentation in R/helpers.R
 \name{listFormula}
 \alias{listFormula}
-\title{Get list of formula from a `sem` object}
+\title{Recompute P-values using Kenward-Rogers approximation}
 \usage{
 listFormula(modelList, formulas = 0)
 }
 \description{
-If remove = TRUE, take out non-evaluated formula
+Recompute P-values using Kenward-Rogers approximation
 }
+\keyword{Get}
+\keyword{`psem`}
+\keyword{a}
+\keyword{formula}
+\keyword{from}
 \keyword{internal}
+\keyword{list}
+\keyword{object}
+\keyword{of}

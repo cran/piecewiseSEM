@@ -29,11 +29,11 @@ Those variables that exist only as predictors in the network are referred to as 
 
 In traditional SEM, the relationships among variables (i.e., their linear coefficients) are estimated simultaneously in a single variance-covariance matrix. This approach is well developed but can be computationally intensive (depending on the sizes of the v-cov matrix) and additionally assumes independence and normality of errors, two assumptions that are generally violated in ecological research.
 
-Piecewise structural equation modeling (SEM), also called confirmatory path analysis, was proposed in the early 2000s by Bill Shipley as an alternate approach to traditional variance-covariance based SEM. In piecewise SEM, each set of relationships is estimated independently (or locally). This proces decomposes the network  into the corresponding simple or multiple linear regressions for each response, each of which are evaluated separately, and then combined later to generate inferences about the entire SEM. This approach has two consequences: 
+Piecewise structural equation modeling (SEM), also called confirmatory path analysis, was proposed in the early 2000s by Bill Shipley as an alternate approach to traditional variance-covariance based SEM. In piecewise SEM, each set of relationships is estimated independently (or locally). This process decomposes the network  into the corresponding simple or multiple linear regressions for each response, each of which are evaluated separately, and then combined later to generate inferences about the entire SEM. This approach has two consequences: 
 1. Increasingly large networks can be estimated with ease compared to a single vcov matrix (because the approach is modularized), and 
 2. Specific assumptions about the distribution and covariance of the responses can be addressed using typical extensions of linear regression, such as fixed covariance structures, random effects, and other sophisticated modeling techniques. 
 
-Unlike traditional SEM, which uses a $\chi^2$ test to compare the observed and predicted covariance matrices, the goodness-of-fit of a piecewise structural equation model is obtained using 'tests of directed separation.' These tests evaluate the assumption that the specific causal structure reflects the data. This is accomplished by deriving the 'basis set,' which is the smallest set of independence claims obtained from the SEM. These claims are relationships that are *un*specified in the model, in other words paths that could have been included but were omitted because they were deemed to be biologically or mechanistically insigificant. The tests ask whether these relationships can truly be considered independent (i.e., their association is not statistically significant within some threshold of acceptable error, typically $\alpha$=0.05) or whether  some causal relationship may exist as indicated by the data.
+Unlike traditional SEM, which uses a $\chi^2$ test to compare the observed and predicted covariance matrices, the goodness-of-fit of a piecewise structural equation model is obtained using 'tests of directed separation.' These tests evaluate the assumption that the specific causal structure reflects the data. This is accomplished by deriving the 'basis set,' which is the smallest set of independence claims obtained from the SEM. These claims are relationships that are *un*specified in the model, in other words paths that could have been included but were omitted because they were deemed to be biologically or mechanistically insignificant. The tests ask whether these relationships can truly be considered independent (i.e., their association is not statistically significant within some threshold of acceptable error, typically $\alpha$=0.05) or whether  some causal relationship may exist as indicated by the data.
 
 For instance, the preceding example SEM contains 4 specified paths (solid, black) and 2 unspecified paths (dashed, red), the latter of which constitute the basis set:
 
@@ -385,9 +385,9 @@ sem2new <- update(sem2, y3 ~ 1)
 AIC(sem1, sem2new)
 ```
 
-Now the comparison is fair and the model selection procedure is robust. In this case, the models have equivalent support (i.e., $\delta$AIC < 2).
+Now the comparison is fair and the model selection procedure is robust. 
 
-Comparison of saturated models--ones that have *no* missing paths--and unsaturated ones using AIC is currently not possible, although we are looking into possible likelihood formulations in the absence of a C statistic.
+Comparison of saturated models--ones that have *no* missing paths--and unsaturated ones using AIC is currently not possible, although we are looking into possible likelihood formulations in the absence of a C statistic (e.g., AIC = 0 + 2K).
 
 ## 3. Comparing Package Versions
 
@@ -416,7 +416,7 @@ This example was included as the primary worked dataset in version 1.x of `piece
 
 In the previous version 1.x of the package, the model is constructed using a `list` and then supplied to various additional functions to measure fit, extract coefficients, and so on. Version 2.0 of the package uses the new function `psem` and uses `summary` to extract all that information at once.
 
-Next, we will walk through the analysis of the Shipley data using version 1.x and version 2.0, and compare the output.
+Next, we will walk through the analysis of the Shipley data using version 1.x and version 2.0.
 
 ```{r, message = F, results = "hide"}
 # Load required packages
@@ -445,15 +445,14 @@ shipley.list <- list(
 ```
 Note the use of mixed effects models to account for the nested non-independence of replicates as well as the use of a generalized linear mixed effects model to account for the binomial distribution of survival.
 
-Next, we extract the goodness-of-fit and path coefficients.
+Next, we would have extracted the goodness-of-fit and path coefficients using the old code (deprecated).
 
 ```{r}
-(old.fit <- sem.fit(shipley.list, shipley, .progressBar = F))
+# (old.fit <- sem.fit(shipley.list, shipley, .progressBar = F))
 
-(old.coefs <- sem.coefs(shipley.list))
+# (old.coefs <- sem.coefs(shipley.list))
 ```
-Note the warnings produced by calling the old functions.
-  
+
 Now, we repeat the exercise using the new functions. `as.psem` converts the list to `psem` object, but you could also run the code using `psem` instead of `list`.
 ```{r, messages = FALSE}
 shipley.psem <- as.psem(shipley.list)
@@ -486,10 +485,12 @@ First, we have the call, which represents the structural questions.
 Next are the AIC and new BIC values, formerly accessible using `sem.aic`. The two produce identical values.
 ```{r, messages = FALSE}
 # Old function
-sem.aic(shipley.list, shipley, .progressBar = F)$AIC
+# sem.aic(shipley.list, shipley, .progressBar = F)$AIC
+
 # Extract from new summary object
 new.summary$IC$AIC
 ### NOT RUN
+
 # Alternately, one could call AIC() on the `psem` object
 # AIC(shipley.psem)
 ```
@@ -500,9 +501,11 @@ Following the information criterion values, we have the tests of directed separa
 The d-sep tests are, once again, identical between the two versions, but are faster to retrieve from `summary` than recomputing them from scratch.
 ```{r, messages = FALSE}
 # Old function
-sem.missing.paths(shipley.list, shipley, .progressBar = F)
+# sem.missing.paths(shipley.list, shipley, .progressBar = F)
+
 # Extract from new summary object
 new.summary$dTable
+
 ### NOT RUN
 # Alternately, one could call dSep() on the `psem` object
 # dSep(shipley.psem)
@@ -511,7 +514,8 @@ new.summary$dTable
 After the d-sep table is the Fisher's C statistic, and the results from the $\chi^2$ test. This information was formerly obtained from `sem.fit`.
 ```{r, messages = FALSE}
 # Old function
-sem.fit(shipley.list, shipley, .progressBar = F)$Fisher.C
+# sem.fit(shipley.list, shipley, .progressBar = F)$Fisher.C
+
 # Extract from summary object
 new.summary$Cstat
 ```
@@ -520,9 +524,10 @@ As with all other functions, the values are exactly the same although the underl
 Next, we have the path coefficients and the standardized estimates.
 ```{r, messages = FALSE}
 # Old function
-sem.coefs(shipley.list, shipley)
+# sem.coefs(shipley.list, shipley)
 
-sem.coefs(shipley.list, shipley, standardize = "scale")
+# sem.coefs(shipley.list, shipley, standardize = "scale")
+
 # Extract from new summary object
 new.summary$coefficients
 # The new coefs() function is much faster too
