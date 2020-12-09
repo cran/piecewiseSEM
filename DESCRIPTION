@@ -1,8 +1,8 @@
 Package: piecewiseSEM
 Type: Package
 Title: Piecewise Structural Equation Modeling
-Version: 2.1.0
-Date: 2019-12-05
+Version: 2.1.2
+Date: 2020-12-09
 Authors@R: c(
     person("Jon", "Lefcheck",   role = c("aut", "cre"), email = "lefcheckj@si.edu"),
     person("Jarrett", "Byrnes",  role = "aut", email = "jarrett.byrnes@umb.edu"),
@@ -13,20 +13,21 @@ Description: Implements piecewise structural equation modeling from a single
     list of structural equations, with new methods for non-linear, latent, and
     composite variables, standardized coefficients, query-based prediction and
     indirect effects. See <http://jslefche.github.io/piecewiseSEM/> for more.
-Depends: R (>= 3.5.0)
+Depends: R (>= 4.0.0)
 URL: https://github.com/jslefche/
 BugReports: https://github.com/jslefche/piecewiseSEM/issues
-Imports: car, DiagrammeR, emmeans, igraph, lme4, MASS, methods, nlme
+Imports: car, DiagrammeR, emmeans, igraph, lme4, multcomp, MASS,
+        methods, nlme
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2019-12-05 16:02:47 UTC; jslef
+Packaged: 2020-12-09 16:46:33 UTC; jslef
 Author: Jon Lefcheck [aut, cre],
   Jarrett Byrnes [aut],
   James Grace [aut]
 Repository: CRAN
-Date/Publication: 2019-12-05 16:50:02 UTC
+Date/Publication: 2020-12-09 17:00:02 UTC
