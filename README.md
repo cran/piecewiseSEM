@@ -1,8 +1,8 @@
 # piecewiseSEM: Piecewise Structural Equation Modeling in R
 [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/piecewiseSEM)](https://cran.r-project.org/package=piecewiseSEM)
 
-## Version 2.3.0
-## Last updated: 03 March 2023
+## Version 2.3.0.1
+## Last updated: 11 June 2024
 
 ## To install
 
@@ -15,7 +15,7 @@ Run the following code to install the development version:
 devtools::install_github("jslefche/piecewiseSEM@devel")
 ```
 Note: the development version may be unstable and lead to unanticipated bugs.
-Contact the package developer with any bugs or issues.
+Contact the package developer via Github with any bugs or issues.
 
 ## Getting Help
 See our website at [piecewiseSEM](http://jslefche.github.io/piecewiseSEM/)
